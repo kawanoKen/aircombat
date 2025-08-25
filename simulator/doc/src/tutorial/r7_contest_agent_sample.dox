@@ -1,0 +1,382 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_r7_contest_agent_sample 第4回空戦AIチャレンジ向け強化学習 Agent サンプル
+
+sample/modules/[R7ContestSample](\ref mainpage_R7ContestSample)に、
+第4回空戦AIチャレンジのシナリオに沿った主要なobservationとactionを一通り備えた
+サンプル Agent クラスをC++とPythonの両方で提供されている。
+
+一から独自 Agent を作成する場合の手順は
+[こちら](\ref page_training_create_custom_agent)
+に説明があるのであわせて参照されたい。
+
+サンプル Agent クラスは
+- [R7ContestAgentSample01](\ref R7ContestSample::R7ContestAgentSample01)・・・C++版
+- [R7ContestPyAgentSample01](\ref R7ContestSample.R7ContestPyAgentSample01.R7ContestPyAgentSample01)・・・Python版
+
+の二つであり、同じ処理を異なる言語で記述したものとなっている。
+
+# 実装の概要 {#section_r7_contest_agent_sample_overview}
+
+編隊全体で1つのAgentを割り当てる中央集権方式と、1機につき1つのAgentを割り当てる分散方式の両方に対応している。
+
+## observablesの抽出 {#section_r7_contest_agent_sample_extract_observables}
+
+parentsのobservablesの取り扱いを容易にするため、以下の4つのメンバ関数によって種類ごとに自身のメンバ変数に格納する機能をもっている。
+- extractFriendObservables()…味方機のobservablesとmotionをparents→それ以外の順にメンバ変数ourObservablesとourMotionに格納する。
+- extractFriendMissileObservables()…味方誘導弾のobservablesを射撃時刻が古い順にソートしてメンバ変数mslsに格納する。
+- extractFriendEnemyObservables()…味方全体で共有している彼機のTrack3Dを最寄りの味方との距離が小さい順にソートしてメンバ変数lastTrackInfoに格納する。
+- extractFriendEnemyMissileObservables()…味方各機が探知している彼側誘導弾のTrack2Dを、自機正面に近い順にソートしてメンバ変数mwsに格納する。
+
+## observationの形式 {#section_r7_contest_agent_sample_observation}
+
+- 観測空間は複雑な構造を表現できるように、Dictとしている。
+- Blue側でもRed側でも同じになるように、自機座標系でないベクトル量は陣営座標系(自陣営の進行方向が+x方向となるようにz軸まわりに回転させ、防衛ライン中央が原点となるように平行移動させた座標系)で表現する。
+- Dict spaceの各要素の仕様は以下のとおり。
+
+    それぞれ、modelConfigに与えるuse_xxxフラグの値によって内訳をカスタマイズ可能である。
+    そのフラグによって空となった要素は出力されない。
+    - common (Box)
+
+        以下の要素を1次元のBox(shape=[common_dim])で格納したもの
+        - 残り時間(1)…分単位の値。remaining_time_clippingにより上側がクリッピングされる。
+
+    - image (Box)
+
+        - use_image_observationをtrueとした場合のみ生成する。
+        - 画像の解像度はimage_longitudinal_resolution×image_lateral_resolutionとする。
+        - ピクセルのインデックスは画像の左下を(0,0)とする。
+        - 戦域を描画する座標系(描画座標系)の+x方向は画像の上方向、+y方向は画像の右方向とする。
+        - 描画座標系の原点は、image_relative_positionをTrueとした場合は自機位置、Falseとした場合は自陣営防衛ライン中央とする。
+        - 描画座標系の+x方向は、image_rotateをTrueとした場合は自機正面、Falseとした場合は自陣営の進行すべき方向とする。
+        - 描画座標系の+y方向は、戦域を真上から見た図として描画されるような向きに取る。
+        - x軸方向(縦方向)の描画範囲はimage_front_range+image_back_rangeとし、原点は画像下端からimage_back_range/(image_front_range+image_back_range)の位置とする。
+        - y軸方向(横方向)の描画範囲は2×image_side_rangeとし、原点は画像の中央とする。
+        - 各チャネルの内容は以下の通り。それぞれ、draw_xxxフラグで有効、無効を切り替えられる。
+
+            1. parentsの軌跡…現時刻が1.0、image_horizon秒前が0となるような線形減衰で、image_interval秒間隔で描画する。
+            2. parents以外の味方の軌跡…現時刻が1.0、image_horizon秒前が0となるような線形減衰で、image_interval秒間隔で描画する。
+            3. 彼機の軌跡…現時刻が1.0、image_horizon秒前が0となるような線形減衰で、image_interval秒間隔で描画する。
+            4. 味方誘導弾の軌跡…現時刻が1.0、image_horizon秒前が0となるような線形減衰で、image_interval秒間隔で描画する。
+            5. parentsのレーダ覆域…現時刻の覆域内を1とする。
+            6. parents以外のレーダ覆域…現時刻の覆域内を1とする。
+            7. 彼我防衛ライン…彼側の防衛ラインを1、我側の防衛ラインを-1とする。
+            8. 場外ライン…ライン上を1とする。
+
+        - parent (Box)
+
+            parentsの諸元を2次元のBox(shape=[maxParentNum,parent_dim])で格納したもの
+
+            - 直前の行動(4+maxEnemyNum)
+
+                1. 左右旋回…前回の目標方位を現在の方位からの差分で格納。
+                2. 上昇・下降…前回の目標高度またはピッチ角を格納。no_vertical_maneuverがtrueの場合は常に0とする。
+                3. 加減速…前回の目標加速度を、accelTableの絶対値が最大の要素で正規化したものを格納。always_maxABがtrueの場合は常に1とする。
+                4. 射撃…前回の射撃コマンドを、射撃なし+射撃対象IDのone hotで格納。
+
+            - 自身を目標とした彼側の仮想誘導弾との距離の最小値(1)…use_virtual_simulator=Trueとした場合のみ。0発の場合は別途コンフィグで指定された定数。horizontalNormalizerで正規化する。
+            - friendに使用される全ての諸元(friend_dim)
+
+        - friend (Box)
+
+            parents以外の味方機の諸元を2次元のBox(shape=[maxFriendNum,friend_dim])で格納したもの
+
+            - 位置(3)…x,y成分をhorizontalNormalizerで、z成分をverticalNormalizerで正規化したもの。
+            - 速度(4)…速度のノルムをfgtrVelNormalizerで正規化したものと、速度方向の単位ベクトルの4次元に分解したもの。
+            - 初期弾数(1)
+            - 残弾数(1)
+            - 姿勢(3)…バンク角、α(迎角)、β(横滑り角)の3次元をradで表現したもの。
+            - 角速度(3)…機体座標系での角速度をrad/sで表現したもの。
+            - 余剰燃料(1)…現在の余剰燃料を距離に換算したものを、2*dLineで正規化して-1〜+1にクリッピングしたもの。
+            - RCSスケール(1)
+            - レーダ探知距離(1)…horizontalNormalizerで正規化。
+            - レーダ覆域(1)…角度をラジアンで
+            - 最大速度倍率(1)
+            - 誘導弾推力倍率(1)…基準推力(この例ではハードコーディング)の値で正規化。
+
+        - enemy (Box)
+
+            - 位置(3)…x,y成分をhorizontalNormalizerで、z成分をverticalNormalizerで正規化したもの。
+            - 速度(4)…速度のノルムをfgtrVelNormalizerで正規化したものと、速度方向の単位ベクトルの4次元に分解したもの。
+
+        - friend_missile (Box)
+
+            - 位置(3)…x,y成分をhorizontalNormalizerで、z成分をverticalNormalizerで正規化したもの。
+            - 速度(4)…速度のノルムをfgtrVelNormalizerで正規化したものと、速度方向の単位ベクトルの4次元に分解したもの。
+            - 飛翔時間(1)…射撃からの経過時間を分単位で。
+            - 目標との距離(1)…horizontalNormalizerで正規化
+            - 目標への誘導状態(3)…Missile::Mode(GUIDED,SELF,MEMORY)のone-hotベクトル
+            - 目標の位置(3)…x,y成分をhorizontalNormalizerで、z成分をverticalNormalizerで正規化したもの。
+            - 目標の速度(4)…速度のノルムをfgtrVelNormalizerで正規化したものと、速度方向の単位ベクトルの4次元に分解したもの。
+            - 誘導弾推力倍率(1)…基準推力(この例ではハードコーディング)の値で正規化。
+
+        - enemy_missile (Box)
+
+            - 観測点の位置(3)…x,y成分をhorizontalNormalizerで、z成分をverticalNormalizerで正規化したもの。
+            - 方向(3)…検出された方向(陣営座標系)
+            - 方向変化率(3)…検出された方向の変化率(陣営座標系)
+
+        - friend_enemy_relative (Box)
+
+            ここはparentsとparents以外の両方を対象とする。
+
+            - 味方から敵へのRHead(1)…horizontalNormalizerで正規化
+            - 味方から敵へのRTail(1)…horizontalNormalizerで正規化
+            - 味方から敵へのRNorm(1)…現在の彼我間距離をRTail〜RHeadが0〜1となるように正規化したもの
+            - 敵から味方へのRHead(1)…horizontalNormalizerで正規化
+            - 敵から味方へのRTail(1)…horizontalNormalizerで正規化
+            - 敵から味方へのRNorm(1)…現在の彼我間距離をRTail〜RHeadが0〜1となるように正規化したもの
+
+        - observation_mask (Dict)
+
+            use_observation_maskをtrueにしたときのみ生成される、各要素に有効な値が入っているかどうかを表すマスク。
+            意味上はboolだが、floatのBoxで格納し、1が有効、0が無効を表すものとする。
+
+            - parent [maxParentNum]
+            - friend [maxFriendNum]
+            - enemy [maxEnemyNum]
+            - friend_missile [maxFriendMissileNum]
+            - enemy_missile [maxEnemyMissileNum]
+            - friend_enemy_relative [maxParentNum+max]
+
+        - action_mask (Tuple[Dict])
+
+            use_action_maskをtrueにしたときのみ生成される、各parentの各行動空間の有効な選択肢を表すマスク。
+            意味上はboolだが、floatのBoxで格納し、1が有効、0が無効を表すものとする。
+
+            このサンプルではtargetのみマスクを計算し、それ以外の行動については全て有効(1)を出力する。
+
+            なお、強化学習ライブラリの中には探索時に無効な行動を除外する機能がないものも多いため、
+            そのようなライブラリを使用する場合にこのマスクを使ってlogitsに-infを入れたりすると発散する可能性がある。
+
+## actionの形式 {#section_r7_contest_agent_sample_action}
+
+各parentのactionを表すDictをparentの数だけ並べたTupleとする。
+Dictの内訳は以下の通り。
+
+- turn (Discrete) 左右旋回を表す。
+
+    - ある基準方位を0として目標方位(右を正)で指定する。
+    - 基準方位は、dstAz_relativeフラグをTrueとした場合、自機正面となり、Falseとした場合、自陣営の進行すべき方向となる。
+    - 目標方位の選択肢はturnTableで与える。
+
+    また、use_override_evasionフラグをTrueとした場合、MWS検出時の基準方位と目標方位テーブルを上書きすることが可能。
+    基準方位は検出された誘導弾の到来方位の平均値と逆向きとし、目標方位テーブルはevasion_turnTableで与える。
+
+- pitch (Discrete) 上昇・下降を表す。
+
+    - no_vertical_maneuverフラグがFalseの場合のみ追加する。ユース部門はFalseを推奨する。
+    - use_altitude_commandフラグをTrueとした場合、基準高度からの目標高度差で指定する。
+    - 基準高度はrefAltInterval間隔で最寄りの高度とし、目標高度差の選択肢はaltTableで与える。
+    - use_altitude_commandフラグをFalseとした場合、水平を0とした目標ピッチ角(上昇を正)で指定する。
+    - 目標ピッチ角の選択肢はpitchTableで与える。
+
+- accel (Discrete) 加減速を表す。
+
+    - always_maxABをTrueとした場合は常時最大推力を出力するものとし、spaceからは削除する。
+    - Falseとした場合は基準速度(=現在速度)に対する速度差として目標速度を指定する。
+    - 速度差の選択肢はaccelTableで与える。
+
+- target (Discrete) 射撃対象を表す。
+
+    0を射撃なし、1〜maxEnemyNumを対応するlastTrackInfoのTrack3DとしたDiscrete形式で指定する。
+
+- shotInterval (Discrete) 射撃間隔(秒)を表す。
+
+    - use_Rmax_fireフラグをTrueとした場合のみspaceに加える。
+    - 選択したTrack3Dに対して前回の射撃からこの秒数以上経過している場合のみ射撃を行う。
+    - 選択肢はshotIntervalTableで与える。
+
+- shotThreshold (Discrete) 射程条件を表す。
+
+    - use_Rmax_fireフラグをTrueとした場合のみspaceに加える。
+    - RTailを0、RHeadを1として距離を正規化した値で、閾値を下回った場合に射撃を行う。
+    - 選択肢はshotThresholdTableで与える。
+
+## 行動制限について {#section_r7_contest_agent_sample_action_limit}
+
+このサンプルでは、いくつかの観点でAIの行動判断を上書きして、一般に望ましくないと思われる挙動を抑制する例を実装している。
+
+1. 高度の制限
+
+    - altMinを下限、altMaxを上限とした高度範囲内で行動するように、それを逸脱しそうな場合に制限をかける。
+    - spaceが目標高度の場合は単純なクリッピングで範囲を限定する。
+    - spaceが目標ピッチ角の場合は、簡易な高度制御則を用いて制限ピッチ角を計算し、それを用いてクリッピングを行う。
+
+2. 場外の制限
+
+    - 戦域中心からdOutLimitの位置に引いた基準ラインの超過具合に応じて目標方位に制限をかける。
+    - 無限遠で基準ラインに直交、基準ライン上で基準ラインと平行になるようなatanスケールでの角度補正を行う。
+    - 補正を行う範囲は、戦域端からdOutLimitThresholdの位置に引いたラインからとする。
+
+3. 同時射撃数の制限
+
+    自機の飛翔中誘導弾がmaxSimulShot発以上のときは新たな射撃を行えないようにしている。
+
+4. 下限速度の制限
+
+    速度がminimumVを下回った場合、minimumRecoveryVを上回るまでの間、
+    目標速度をminimumRecovertDstVに固定することで、低速域での飛行を抑制している。
+
+## メンバ変数 {#section_r7_contest_agent_sample_member_variables}
+
+### modelConfigで設定するもの {#section_r7_contest_agent_sample_member_variables_from_modelConfig}
+    - observation spaceの設定
+        - maxParentNum (int): observation,actionに用いるparentsの最大数
+        - maxFriendNum (int): observationに用いるparents以外の味方機の最大数
+        - maxEnemyNum (int): observationに用いる彼機航跡の最大数
+        - maxFriendMissileNum (int): observationに用いる我側誘導弾の最大数
+        - maxEnemyMissileNum (int): observationに用いる彼側誘導弾の最大数
+        - horizontalNormalizer (float): 水平方向の位置・距離の正規化のための除数
+        - verticalNormalizer (float): 高度方向の正規化のための除数
+        - fgtrVelNormalizer (float): 機体速度の正規化のための除数
+        - mslVelNormalizer (float): 誘導弾速度の正規化のための除数
+        - 仮想シミュレータの使用
+            - use_virtual_simulator (bool): 仮想シミュレータを使用するかどうか
+            - virtual_simulator_value_when_no_missile (float): 仮想誘導弾が存在しないときに用いる距離定数。大きい値を推奨。
+            - virtual_simulator_maxNumPerParent (int): 各parentあたりの最大仮想誘導弾数
+            - virtual_simulator_launchInterval (int): 仮想誘導弾の生成間隔 (agent step数単位)
+            - virtual_simulator_kShoot (float): 仮想誘導弾の射撃条件(彼から我へのRNormがこの値以下のとき射撃)
+        - 2次元画像としてのobservation
+            - use_image_observation (bool): 戦域を2次元画像で表現したobservationを使用するかどうか
+            - image_longitudinal_resolution (int): 前後方向の解像度
+            - image_lateral_resolution (int): 左右方向の解像度
+            - image_front_range (float): 前方の描画範囲(m)
+            - image_back_range (float): 後方の描画範囲(m)
+            - image_side_range (float): 側方の描画範囲(m)
+            - image_horizon (int): 軌跡を描画する秒数
+            - image_interval (int): 軌跡を描画する間隔
+            - image_rotate (bool): 画像化の基準座標系。trueの場合は生存中のparentsのうち先頭の機体の正面を-x軸とするように回転した座標系。falseの場合は陣営座標系とする。
+            - image_relative_position (bool): 画像化の基準位置。trueの場合は生存中のparentsのうち先頭の機体の位置、falseの場合は自陣営防衛ライン中央とする。
+            - draw_parent_trajectory (bool): parentsの軌跡を描画するかどうか
+            - draw_friend_trajectory (bool): parents以外の味方の軌跡を描画するかどうか
+            - draw_enemy_trajectory (bool): 彼機の軌跡を描画するかどうか
+            - draw_friend_missile_trajectory (bool): 味方誘導弾の軌跡を描画するかどうか
+            - draw_parent_radar_coverage (bool): parentsのレーダ覆域を描画するかどうか
+            - draw_friend_radar_coverage (bool): parents以外のレーダ覆域を描画するかどうか
+            - draw_defense_line (bool): 防衛ラインを描画するかどうか
+            - draw_side_line (bool): 南北の場外ラインを描画するかどうか
+        - 共通情報に関するobservation
+            - use_remaining_time (bool): 残り時間の情報を入れるかどうか
+            - remaining_time_clipping (float): 残り時間の情報を入れる際の上側クリッピング値
+        - parentsの状態量に関するobservation
+            - use_parent_last_action (bool): 前回の行動情報を入れるかどうか
+        - 味方機の状態量に関するobservation
+            - use_friend_position (bool): 位置情報を入れるかどうか
+            - use_friend_velocity (bool): 速度情報を入れるかどうか
+            - use_friend_initial_num_missile (bool): 初期弾数情報を入れるかどうか
+            - use_friend_current_num_missile (bool): 残弾数情報を入れるかどうか
+            - use_friend_attitude (bool): 姿勢情報を入れるかどうか
+            - use_friend_angular_velocity (bool): 角速度情報を入れるかどうか
+            - use_friend_current_fuel (bool): 残燃料情報を入れるかどうか
+            - use_friend_rcs_scale (bool): RCS情報を入れるかどうか
+            - use_friend_radar_range (bool): レーダ探知距離情報を入れるかどうか
+            - use_friend_radar_coverage (bool): レーダ覆域情報を入れるかどうか
+            - use_friend_maximum_speed_scale (bool): 最大速度倍率情報を入れるかどうか
+            - use_friend_missile_thrust_scale (bool): 誘導弾推力倍率情報を入れるかどうか(誘導弾側のオンオフとも連動)
+        - 彼機の状態量に関するobservation
+            - use_enemy_position (bool): 位置情報を入れるかどうか
+            - use_enemy_velocity (bool): 速度情報を入れるかどうか
+        - 味方誘導弾の状態量に関するobservation
+            - use_friend_missile_position (bool): 位置情報を入れるかどうか
+            - use_friend_missile_velocity (bool): 速度情報を入れるかどうか
+            - use_friend_missile_flight_time (bool): 飛翔時間情報を入れるかどうか
+            - use_friend_missile_target_distance (bool): 目標との距離情報を入れるかどうか
+            - use_friend_missile_target_mode (bool): 目標への誘導状態を入れるかどうか
+            - use_friend_missile_target_position (bool): 目標の位置情報を入れるかどうか
+            - use_friend_missile_target_velocity (bool): 目標の速度情報を入れるかどうか
+            - use_friend_missile_thrust_scale (bool): 誘導弾推力倍率情報を入れるかどうか(戦闘機側のオンオフとも連動)
+        - 彼側誘導弾の状態量に関するobservation
+            - use_enemy_missile_observer_position (bool): 観測者の位置情報を入れるかどうか
+            - use_enemy_missile_direction (bool): 検出方向情報を入れるかどうか
+            - use_enemy_missile_angular_velocity (bool): 検出方向変化率情報を入れるかどうか
+        - 我機と彼機の間の関係性に関するobservation
+            - use_our_missile_range (bool): 我機から彼機への射程情報を入れるかどうか
+            - use_their_missile_range (bool): 彼機から我機への射程情報を入れるかどうか
+    - action spaceの設定
+        - 左右旋回に関する設定
+            - dstAz_relative (bool): 旋回の原点に関する設定。trueの場合は自機正面、falseの場合は自陣営の進行方向が原点となる。
+            - turnTable (list[float]): 通常時の目標方位(deg)テーブル(右が正)
+            - evasion_turnTable (list[float]): MWS作動時の目標方位(deg)テーブル(検出した誘導弾を背にした方位を0とし、右が正)
+            - use_override_evasion (bool): MWS作動時の目標方位テーブルを専用のものに置き換えるかどうか
+        - 上昇・下降に関する設定
+            - no_vertical_maneuver (bool): 上昇・下降のアクションを用いるかどうか。ユース部門はfalseを推奨する。
+            - pitchTable (list[float]): 目標ピッチ角(deg)テーブル(上昇が正)
+            - altTable (list[float]): 目標高度(m)テーブル(最寄りの基準高度からの高度差で指定)
+            - refAltInterval (float): 基準高度グリッドの間隔(m)
+            - use_altitude_command (bool): ピッチ角と高度のどちらを使用するか。trueでピッチ、falseで高度を使用する。
+        - 加減速に関する設定
+            - accelTable (list[float]): 目標加速度テーブル
+            - always_maxAB (bool): 常時maxABするかどうか。
+        - 射撃に関する設定
+            - shotIntervalTable (list[float]) 同一目標に対する射撃間隔(秒)テーブル
+            - shotThresholdTable (list[float]): 射撃閾値テーブル(RTailを0、RHeadを1とした線形空間での閾値)
+            - use_Rmax_fire (bool): 既存の射程テーブルを用いて射撃判定を行うかどうか。
+    - 行動制限に関する設定
+        - 高度制限に関する設定(ピッチ角をactionにしている場合のみ有効)
+            - altMin (float): 下限高度
+            - altMax (float): 上限高度
+            - altitudeKeeper (dict): ピッチ角制限を計算するための高度制御則。サンプルではFlightControllerUtility.hのAltitudeKeeperクラスを使用しており、configではそのパラメータをdictで指定する。
+        - 場外制限に関する設定
+            - dOutLimit (float): 場外防止の基準ラインの距離
+            - dOutLimitThreshold (float): 場外防止を開始する距離
+            - dOutLimitStrength (float): 場外防止の復元力に関する係数
+        - 同時射撃数の制限に関する設定
+            - maxSimulShot (int): 自身が同時に射撃可能な誘導弾数の上限
+        - 下限速度の制限に関する設定
+            - minimumV (float): 低速域からの回復を開始する速度
+            - minimumRecoveryV (float): 低速域からの回復を終了する速度
+            - minimumRecoveryDstV (float): 低速域からの回復時に設定する目標速度
+
+### 内部変数 {#section_r7_contest_agent_sample_member_variables_internal_state}
+    - observationに関するもの
+        - _observation_space (gym.spaces.Space): 観測空間を表すgym.spaces.Space
+        - ourMotion (list[MotionState]): 味方各機のMotionState
+        - ourObservables (list[nl::json]): 味方各機のobservables
+        - lastTrackInfo (list[Track3D]): 自陣営が捉えている彼機航跡
+        - msls (list[nl::json]): 自陣営の誘導弾(のobservables)
+        - mws (list[list[Track2D]]): 各味方が検出している彼側誘導弾航跡
+        - virtualSimulator (VirtualSimulator): 仮想シミュレータ
+        - 2次元画像としてのobservation
+            - numChannels (int): チャネル数
+            - image_buffer (3-dim ndarray): 画像データバッファ。shape=[numChannels,image_longitudinal_resolution,image_lateral_resolution]
+            - image_buffer_coords (3-dim ndarray): ピクセル座標(lon,lat)と戦域座標(x,y)のマッピング。shape=[2,image_longitudinal_resolution,image_lateral_resolution]
+            - image_past_data (list[InstantInfo]): 軌跡描画用の過去データのバッファ
+            - struct InstantInfo: 機軌跡描画用のフレームデータ
+                parent_pos (list[3-elem 1-dim ndarray]): parentsの位置
+                friend_pos (list[3-elem 1-dim ndarray]): parents以外の味方の位置
+                friend_msl_pos (list[3-elem 1-dim ndarray]): 味方誘導弾の位置
+                enemy_pos (list[3-elem 1-dim ndarray]): 彼機の位置
+        - common_dim (int): 共通情報(残り時間等)の次元
+        - parent_dim (int): parent1機あたりの次元
+        - friend_dim (int): parent以外の味方1機あたりの次元
+        - enemy_dim (int): 彼機1機あたりの次元
+        - friend_missile_dim (int): 味方誘導弾1発あたりの次元
+        - enemy_missile_dim (int): 彼側誘導弾1発あたりの次元
+        - friend_enemy_relative_dim (int): 我機と彼機の関係性1組あたりの次元
+        - last_action_dim (int): parent1機あたりの前回の行動の次元
+        - last_action_obs (dict[str,1-dim ndarray]): 各parentsの前回の行動を格納するバッファ。shape=[last_action_dim]
+    - actionに関するもの
+        - _action_space (gym.spaces.Space): 行動空間を表すgym.spaces.Space
+        - struct ActionInfo: 機体に対するコマンドを生成するための構造体
+            - dstDir (3-elem 1-dim ndarray): 目標進行方向
+            - dstAlt (float): 目標高度
+            - velRecovery (bool): 下限速度制限からの回復中かどうか
+            - asThrottle (bool): 加減速についてスロットルでコマンドを生成するかどうか
+            - keepVel (bool): 加減速について等速(dstAccel=0)としてコマンドを生成するかどうか
+            - dstThrottle (float): 目標スロットル
+            - dstV (float): 目標速度
+            - launchFlag (bool): /射撃するかどうか
+            - target (Track3D): 射撃対象
+            - lastShotTimes (dict[boost::uuids::uuid,Time]): 各Trackに対する直前の射撃時刻
+        actionInfos (dict[str,ActionInfo]): 各parentsの行動を表す変数
+    - Ruler、陣営に関するもの
+        - dOut (float): 戦域中心から場外ラインまでの距離
+        - dLine (float): 戦域中心から防衛ラインまでの距離
+        - teamOrigin (BasicAgentUtility::util::TeamOrigin): 陣営座標系(進行方向が+x方向となるようにz軸まわりに回転させ、防衛ライン中央が原点となるように平行移動させた座標系)を表すクラス
+
+*/
+    }
+}

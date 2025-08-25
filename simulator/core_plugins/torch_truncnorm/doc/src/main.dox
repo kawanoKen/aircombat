@@ -1,0 +1,12 @@
+/**
+
+\mainpage torch_truncnorm
+\anchor mainpage_torch_truncnorm
+
+PyTorchで切断ガウス分布を用いるためのプラグイン
+
+
+
+[ドキュメントのトップに戻る(ASRCAISim1)](\ref mainpage_core)
+
+*/

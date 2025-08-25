@@ -1,0 +1,130 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_MatchMaker_MatchMaker 対戦管理機能の基底クラス MatchMaker と MatchMonitor
+
+本プラグインは複数の行動判断モデルを用いて Self-Play 等の対戦管理を行うための機能を提供する。
+
+ただし、多くの処理を実際に学習を行うプログラム側に依存するため、本追加機能のみでは実現できない。
+実例は同梱の学習サンプルを参考にされたい。
+
+対戦管理機能の基底クラスは以下の2つのクラスから構成される。
+ユーザはこれらを継承して実際の振る舞いをカスタマイズする想定である。
+
+- [MatchMaker](\ref MatchMaker.MatchMaker.MatchMaker)
+
+    インスタンスを学習中に一つだけ生成し、全体の対戦管理を行うクラス。
+
+- [MatchMonitor](\ref MatchMaker.MatchMaker.MatchMonitor)
+
+    実際にエピソードを実行するインスタンスごとに生成し、対戦結果を抽出して
+    MatchMaker に渡す result を生成するクラス。
+
+# 使用方法 {#section_MatchMaker_MatchMaker_usage}
+
+1. MatchMaker のコンストラクタ引数について
+
+    MatchMaker クラスのコンストラクタはdict型の引数configをとる。必須のキーは以下の通り。
+    ```python
+    config={
+        "restore": None or str, #チェックポイントを読み込む場合、そのパスを指定。
+        "weight_pool": str, #重みの保存場所。<policy>-<id>.datのようにPolicy名と重み番号を示すファイル名で保存される。
+        "policy_config": { #Policyに関する設定。Policy名をキーとしたdictで与える。
+            <Policy's name>: Any, #具象クラスごとの様式に従った各Policyの設定
+            ...
+        },
+        "match_config": Any #対戦カードの生成に関する指定。具象クラスで自由に定める
+    }
+    ```
+
+2. MatchMaker と MatchMonitor の生成
+
+    学習プログラムにおいて、メインプロセスで一つだけ MatchMaker インスタンスを生成する必要がある。
+    また、 MatchMonitor はエピソードを生成するWorkerインスタンスごとに生成する必要がある。
+
+3. resultの伝達
+
+    学習プログラムに適した方法にて、各 MatchMonitor.onEpisodeEnd が抽出したエピソードの結果を MatchMaker.onEpisodeEnd に供給する必要がある。
+
+4. 対戦カードを環境に反映するための機構の準備
+
+    学習プログラムにおいて、生成された対戦カードを用いて環境の生成を行う機構も必要である。
+
+5. 重みの読み書きや初期化に関する処理の実装
+
+    MatchMaker / MatchMonitor は特定の強化学習ライブラリに依存させないために、重みを直接扱わないようにしている。
+    そのため、重みの読み書きや初期化を実際に行う処理は学習プログラム側で準備する必要がある。
+
+# カスタマイズの方法
+
+実際にMatchMaker を使用するうえでは、環境の仕様に応じて以下の関数群を適宜オーバーライドして使用する。
+
+1. MatchMaker.makeNextMatch のオーバーライド
+
+    対戦グループ(○○リーグのようなイメージ)を表す何らかの変数matchTypeを引数にとり
+    何らかの対戦カードを返す関数であり、各ユーザーが独自の対戦方式を実装するものである。
+
+    対戦カードはdictで表現され、場に登場するチームごとにどのPolicyのどの重みを使うかをキー"Policy"と"Weight"により指定する。
+
+    また、同名のPolicyで異なる重みを複数同時に使用したい場合等のために、それらを区別するための"Suffix"を指定可能である。
+
+    重み番号は基本的に
+    - 負数(-1): 学習中の現物
+    - 0: 学習中重みの最新のコピー(随時更新される)
+    - 自然数: 過去のある時点で保存されたコピー
+
+    とすることを想定しているが、 MatchMaker を使用する学習プログラムの書き方次第である。
+
+    また、これら以外に必要な情報があれば適宜追加してもよい。まとめると、以下のような書き方になる。
+    ```python
+    {
+        "teams": {
+            <Team's name>: {
+                "Policy": str, # teamを動かすPolicyの名前
+                "Weight": int, # teamを動かすPolicyの重み番号
+                "Suffix": str, # teamを動かすPolicyの接尾辞。同名のPolicyで異なる重みを使用する場合等に指定する。省略は不可。
+            }
+        },
+        "common": dict # teamに依存しない条件(Rule等)を記述する。派生クラスで定義する。
+    }
+    ```
+
+2. MatchMaker.onEpisodeEnd のオーバーライド
+
+    いずれかの対戦が終わったときに呼び出し、その対戦を実施したインスタンスにおける次の対戦カードを生成して返す関数。
+
+    引数は、終了した対戦のmatchInfoと、対応する MatchMonitor.onEpisodeEnd で生成されたresultを与えるものとする。
+    また、返り値として、重み保存要否を記したdictを返す必要がある。
+    基本的には重み保存を行うPolicyのみを対象として以下のようなdictとして記述することを想定している。
+    ```python
+    {
+        <Policy's name>: {
+            "weight_id": int, # 保存先の重み番号
+            "reset": bool, # 保存後に重みをリセットするかどうか
+        }
+    }
+    ```
+
+3. MatchMonitor.onEpisodeEnd のオーバーライド
+
+    環境インスタンスごとに対戦結果を抽出して MatchMaker に渡すresultを生成する関数。
+
+    MatchMaker.onEpisodeEnd で重み保存や次回の対戦カードの生成の判定を行うために必要な情報があれば、環境インスタンスから抽出して返す。
+
+4. MatchMaker.checkInitialPopulation のオーバーライド
+
+    学習開始時の重みをweight_poolに追加するかどうかを返す関数。返り値の形式はonEpisodeEndと同じ。
+    用途としては、別の学習済モデルを読み込んで開始したときにその初期状態を対戦候補に含めたいような場合等が考えられる。
+
+5. MatchMaker.get_metrics 関数のオーバーライド
+
+    Tensorboardログ等に記録するための値を格納したdictを返す関数として、必要に応じてオーバーライドする。
+
+6. MatchMaker.initialize, load, saveのオーバーライド
+
+    MatchMaker の初期化やチェックポイントの生成、読み込みを行うための各関数を必要に応じてオーバーライドする。
+
+*/
+    }
+}

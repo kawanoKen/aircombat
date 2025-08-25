@@ -1,0 +1,12 @@
+/**
+
+\mainpage cpp_template
+\anchor mainpage_cpp_template
+
+C++を用いて独自プラグインを作成するためのひな形。Pythonクラスも追加可能。
+
+
+
+[ドキュメントのトップに戻る(ASRCAISim1)](\ref mainpage_core)
+
+*/

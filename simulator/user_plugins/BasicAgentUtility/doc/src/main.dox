@@ -1,0 +1,12 @@
+/**
+
+\mainpage BasicAgentUtility
+\anchor mainpage_BasicAgentUtility
+
+空対空戦闘のAgentクラスを実装するためのユーティリティ機能を追加するプラグイン
+
+
+
+[ドキュメントのトップに戻る(ASRCAISim1)](\ref mainpage_core)
+
+*/

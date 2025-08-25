@@ -1,0 +1,161 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_training_create_custom_agent 独自 Agent の実装方法
+
+独自の Agent クラスを実装する場合の大まかな流れは以下の通りである。
+
+1. 単一の PhysicalAsset を対象とする場合は SingleAssetAgent クラスを、それ以外の場合は Agentクラスを継承する。
+
+2. Observation と Action の形式を決め、
+    [observation_space](\ref Agent::observation_space)関数と
+    [action_space](\ref Agent::action_space)関数をオーバーライドする。
+
+3. observables から Observation を生成する[makeObs](\ref Agent::makeObs)関数と、
+    Action から decision と commands を生成する[deploy](\ref Agent::deploy)関数をオーバーライドする。
+    このとき、これらの関数だけでは難しくより細かい周期で処理する必要がある場合も想定されるため、
+    必要に応じて
+    [perceive](\ref Agent::perceive)、
+    [control](\ref Agent::control)、
+    [behave](\ref Agent::behave)関数をオーバーライドする。
+
+4. modelConfig として設定可能とするパラメータを選択し、他の登場物に依存する初期化処理が
+    必要な場合は[validate](\ref Agent::validate)関数もオーバーライドし、初期化処理を記述する。
+
+5. 模倣学習を使用する場合は、模倣対象として想定する Agent クラスの decision と commands から、
+    自身の action_space の中で最も類似している Action を計算する[convertActionFromAnother](\ref Agent::convertActionFromAnother)関数を
+    オーバーライドする。また、[control](\ref Agent::control) 関数の中身を模倣対象の
+    [decision](#section_training_imitation_common_decision_format) と commands に応じて変更したい場合、
+    [controlWithAnotherAgent](\ref Agent::controlWithAnotherAgent)関数をオーバーライドする。
+
+6. メンバ変数 observables と commands が適切に計算されているかを確認する。特に、このクラスが
+    模倣される側となることを想定する場合は observables に decision が含まれていることを確認する。
+
+7. C++で実装した場合、pybind11 を用いて Python 側へ公開する。
+
+8. Factory へクラスを登録する処理をどのタイミングで実行するかを決定する。
+    インポート時に呼ばれるように記述してもよいし、ユーザーがインポート後に手動で登録するものとしてもよい。
+
+9. json ファイル等を用意して modelConfig を記述し、Factory にモデル登録ができるようにする。
+    このとき、[perceive](\ref Agent::perceive)、[control](\ref Agent::control)、[behave](\ref Agent::behave)
+    をオーバーライドした場合であって、1[tick]ごとではない処理周期としたい場合には、
+    [こちら](#section_simulation_entity_dependency)に従い modelConfig に処理周期に関する記述を追加する。
+
+10. 以上により、 SimulationManager の config["AgentConfigDispatcher"]に登録したモデル名を指す
+    alias 要素を記述することで独自の Agent が使用可能となる。
+
+# Python クラスとして Agent クラスを実装する際のひな形
+
+Python クラスとして Agent クラスを実装する際のひな形を以下に示す。
+
+```python
+class UserAgent(Agent): # Agent の代わりに SingleAssetAgent を継承してもよい
+    def __init__(self, modelConfig: nljson, instanceConfig: nljson):
+        super().__init__(modelConfig, instanceConfig)
+        if(self.isDummy):
+            return #Factory によるダミー生成のために空引数でのインスタンス化に対応させる
+        # 以上 3 行の呼び出しは原則として必須である。
+
+        #modelConfig から値を取得する場合、直接[]でアクセスすると nljson 型で得られる。
+        #Python のプリミティブ型にするためには()を付けて__call__を呼ぶ必要がある。
+        self.hoge = self.modelConfig["hoge"]()
+        # getValueFromJsonKRD()等のユーティリティを用いて
+        # 確率的な選択やデフォルト値の設定も可能。
+        # その場合の出力は Python プリミティブ型となるため()の付加は不要。
+        # 現バージョンでは乱数生成器には std::mt19937 しか使用できないが、
+        # self.randomGen として基底クラスで予め生成されているためこれを使用する。
+
+        self.withRandom = getValueFromJsonKR(self.modelConfig,"R",self.randomGen)
+        defaultValue = 1234
+        self.withDefault = getValueFromJsonKD(self.modelConfig, "D", defaultValue)
+        self.withRandomAndDefault = getValueFromJsonKRD(self.modelConfig, "RD", self.randomGen, defaultValue)
+
+    def action_space(self) -> gym.spaces.Space:
+        # 行動空間の定義(必須)
+        return gym.spaces.MultiDiscrete([3,3,3,3]) #所要の Space を返す。
+
+    def observation_space(self) -> gym.spaces.Space:
+        # 状態空間の定義(必須)
+        return gym.space.Box(low=0.0, high=1.0, shape=(100,)) #所要の Space を返す。
+
+    def makeObs(self) -> object:
+        # Observation の生成(必須)
+
+        #各種時刻情報の取得方法
+        time = self.manager.getTime() #現在時刻(秒単位)
+        tick = self.manager.getTickCount() #現在時刻(tick 単位)
+        stepCount = self.getStepCount() #自身の行動判断ステップ数
+        stepInterval = self.getStepInterval() #自身の行動判断周期(tick 単位)
+        baseTimeStep = self.manager.getBaseTimeStep() #1tick あたりの秒数
+
+        #Ruler の情報の取得方法
+        ruler = self.manager.getRuler()() #getRuler()で RulerAccessor 型の weak_ptr が
+                                          #得られるため、更に()で本体を取得する
+        rulerObs = ruler.observables #nljson 型で得られる
+
+        #parent の情報の取得方法
+        #(1)SingleAssetAgent から継承した場合、self.parent を使用する。
+        parentObs = self.parent.observables #nljson 型で得られる
+        motion = MotionState(parentObs["motion"]) #運動情報は MotionState として取得する
+        missiles = [m for m in parentObs["weapon"]["missiles"]] #誘導弾情報
+        tracks = [Track3D(t) for t in parentObs["sensor"]["track"]] #彼機航跡情報
+        mws = [Track2D(t) for t in parentObs["sensor"]["mws"]["track"]] #MWS 情報
+
+        #(2)Agent から継承した場合、dict 型の self.parents を使用する。
+        for parentFullName, parent in self.parents.items():
+            parentObs = parent.observables #nljson 型で得られる
+            if (parentObs["isAlive"]()): # 複数のparentsがいる場合、生存していない可能性がある。
+                                         # 生存していないparentはほとんどのobservablesが無効になっているため、
+                                         # 適切に処理を分岐する必要がある。
+                pass
+
+        return np.zeros([100]) #observables を加工し、所要の Observation を返す。
+
+    def deploy(self,action: object):
+        #Action の解釈と decision and/or commands の生成 (1step に 1 回実行)(必須)
+
+        #decision は Agent 自身の observables の一部として記述する。
+        #使用しない場合は省略しても差し支えない。
+        self.observables[self.parent.getFullName()]["decision"]={
+            "Roll":["Don’t care"],
+            "Horizontal":["Az_BODY",0.0],
+            "Vertical":["El",0.0],
+            "Throttle":["Vel",300.0],
+            "Fire":[False,Track3D()]
+        }
+
+    def validate(self):
+        #コンストラクタ外の初期化処理(必須ではない)
+        #ruler や parent の observables に依存するものがあるような場合を想定している。
+        pass
+
+    def perceive(self):
+        #より細かい tick 単位の処理(perceive)を記述(必須ではない)
+        #decision and/or commands の複雑な生成処理を行う場合等に用いる。
+        pass
+
+    def control(self):
+        #1tick 単位の処理(control)を記述(必須ではない)
+        #decision and/or commands の複雑な生成処理を行う場合等に用いる。
+        #commands は deploy で計算してもよいが、control でより高頻度に計算してもよい。
+        self.commands[self.parent.getFullName()] = {
+            "motion": { #機動の指定。以下の指定方法は一例。
+                "dstDir": np.array([1.0, 0.0, 0.0]), #進みたい方向を指定
+                "dstV": 300.0 #進みたい速度を指定
+            },
+            "weapon": {
+                "launch": False, #射撃要否を bool で指定
+                "target": Track3D().to_json() #射撃目標の Track3D を json 化して指定
+            }
+        }
+
+    def behave(self):
+        #1tick 単位の処理(behave)を記述(必須ではない)
+        #decision and/or commands の複雑な生成処理を行う場合等に用いる。
+        pass
+```
+
+*/
+    }
+}

@@ -1,0 +1,4 @@
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+
+RUN touch /etc/profile \
+    && sed -i '$asource /opt/data/venv/acac_4th/bin/activate' /etc/profile

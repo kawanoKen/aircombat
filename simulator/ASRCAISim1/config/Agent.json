@@ -1,0 +1,30 @@
+{"Factory":{"Agent":{
+	"ExpertI":{
+		"class":"ExpertWrapper",
+		"config":{
+			"whichExpose":"Imitator",
+			"whichOutput":"Imitator"
+		}
+	},
+	"ExpertE":{
+		"class":"ExpertWrapper",
+		"config":{
+			"whichExpose":"Expert",
+			"whichOutput":"Expert"
+		}
+	},
+	"ExpertBI":{
+		"class":"ExpertWrapper",
+		"config":{
+			"whichExpose":"Both",
+			"whichOutput":"Imitator"
+		}
+	},
+	"ExpertBE":{
+		"class":"ExpertWrapper",
+		"config":{
+			"whichExpose":"Both",
+			"whichOutput":"Expert"
+		}
+	}
+}}}

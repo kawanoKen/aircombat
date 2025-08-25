@@ -1,0 +1,48 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_r7_contest_reward_sample 第4回空戦AIチャレンジ向け強化学習 Reward サンプル
+
+sample/modules/[R7ContestSample](\ref mainpage_R7ContestSample)に、
+空対空戦闘における基本的な報酬を表す Reward クラスをC++とPythonの両方で提供されている。
+
+一から独自 Reward を作成する場合の手順は
+[こちら](\ref page_training_create_custom_reward)
+に説明があるのであわせて参照されたい。
+
+サンプル Reward クラスは
+- [R7ContestRewardSample01](\ref R7ContestSample::R7ContestRewardSample01)・・・C++版その1
+- [R7ContestRewardSample02](\ref R7ContestSample::R7ContestRewardSample02)・・・C++版その2
+- [R7ContestPyRewardSample01](\ref R7ContestSample.R7ContestPyRewardSample01.R7ContestPyRewardSample01)・・・Python版その1
+- [R7ContestPyRewardSample02](\ref R7ContestSample.R7ContestPyRewardSample02.R7ContestPyRewardSample02)・・・Python版その2
+
+の四つであり、二種類の報酬モデルを二種類の言語で記述したものとなっている。
+
+# サンプルその1の概要 {#section_r7_contest_reward_sample_01_overview}
+
+サンプルその1は、以下の観点で陣営単位の報酬を与えるものである。
+
+1. Bite(誘導弾シーカで目標を捕捉)への加点
+2. 誘導弾目標のメモリトラック落ちへの減点
+3. 敵探知への加点(生存中の敵の何%を探知できているか)
+4. 過剰な機動への減点
+5. 前進・後退への更なる加減点
+6. 保持している力学的エネルギー(回転を除く)の多寡による加減点
+
+# サンプルその2の概要 {#section_r7_contest_reward_sample_02_overview}
+
+サンプルその2は、以下の観点で Agent 単位の報酬を与えるものである。
+
+1. 敵ミサイルの回避成功
+2. 被撃墜
+3. 墜落
+4. 撃墜
+5. 場外
+6. 終了時の生存
+7. 余剰燃料の有無(今回のシナリオでは無意味)
+
+*/
+
+    }
+}

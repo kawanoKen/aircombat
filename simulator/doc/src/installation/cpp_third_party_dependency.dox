@@ -1,0 +1,33 @@
+/**
+
+\page page_cpp_third_party_dependency C++依存ライブラリの一覧
+本シミュレータは以下のC++ライブラリを使用している。これらのライブラリはGitHubリポジトリから自動的にダウンロードされ、
+本シミュレータの本体部分(ASRCAISim1パッケージ)と一緒にビルド及びインストールが行われる。
+
+- NLopt https://nlopt.readthedocs.io/en/latest/
+NLoptは非線形最適化ライブラリである。
+
+- Eigen https://eigen.tuxfamily.org/
+Eigenはヘッダオンリーの線形代数ライブラリである。なお、Eigenは一部にLGPLライセンスのコードを含んでいるが、
+本シミュレータではコンパイラオプションにで-DEIGEN_MPL2_ONLYを指定しているため、MPL2ライセンスの部分のみを使用している。
+
+- pybind11 https://pybind11.readthedocs.io/en/stable/
+pybind11はヘッダオンリーのC++・Python連接用ライブラリである。
+
+- nlohmann's json https://github.com/nlohmann/json/
+nlohmann's jsonはヘッダオンリーのjsonライブラリである。
+
+- cereal https://github.com/USCiLab/cereal/
+cerealは任意のオブジェクトをバイナリやjson等に変換するためのシリアライゼーションライブラリである。
+
+- Magic Enum C++ https://github.com/Neargye/magic_enum/
+Magic Enum C++はenumクラスと文字列の相互変換を容易にするためのヘッダオンリーライブラリである。
+
+- thread-pool https://github.com/bshoshany/thread-pool/
+thread-poolはスレッドプールの機能を提供するヘッダオンリーライブラリである。
+
+- Boost https://www.boost.org/
+Boostは様々な機能を提供する多機能ライブラリである。本シミュレータはヘッダオンリーとして提供されているいくつかの機能を利用している。
+
+
+*/

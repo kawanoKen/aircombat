@@ -1,0 +1,59 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_entity_creation Entity の生成
+
+# EntityManager (SimulationManager)のメンバによる生成 {#section_simulation_entity_creation_by_Manager}
+
+EntityManager のメンバ関数を用いて Entity を生成する際の引数は、
+[後述](\ref section_simulation_entity_creation_format)の値に加えて、以下の2つが必要となる。
+
+- const FactoryHelperChain& helperChain
+
+    クラス名・モデル名の検索に用いる FactoryHelperChain 。省略時は空。
+- const std::shared_ptr<const Entity >& caller
+
+    Entity の生成を要求した Entity がいる場合、その Entity へのポインタ。省略時はnullptr。
+    caller が生成対象の Entity を生成する権限を持っているかを Factory が判定する。
+
+使用可能なメンバ関数は以下のとおり。
+
+- EntityManager::createUnmanagedEntity
+- EntityManager::createUnmanagedEntityByClassName
+- EntityManager::createOrGetUnmanagedEntity
+- EntityManager::createEntity
+- EntityManager::createEntityByClassName
+- EntityManager::createOrGetEntity
+
+# Entityのメンバによる生成 {#section_simulation_entity_creation_by_Entity}
+
+Entity のメンバ関数を用いて Entity を生成する際の引数は、
+[後述](\ref section_simulation_entity_creation_format)のとおりである。
+
+なお、 Entity が他の Entity を生成する場合、
+生成元の Entity に生成権限があるかどうかが Factory によって自動判定され、
+権限のある種類の Entity のみを生成することができる。
+
+使用可能なメンバ関数は以下のとおり。
+
+- Entity::createUnmanagedEntity
+- Entity::createUnmanagedEntityByClassName
+- Entity::createOrGetUnmanagedEntity
+- Entity::createEntity
+- Entity::createEntityByClassName
+- Entity::createOrGetEntity
+
+
+# Entity 生成用関数に与えるコンフィグの書式 {#section_simulation_entity_creation_format}
+
+Entity を生成するための前述の関数群の引数として与えることのできる値は様々な関数オーバーロードによって様々な組み合わせが許容されるが、
+例えば一つのnl::jsonにまとめて渡す場合は以下のような構成となる。
+
+\include doc/src/format/Entity_creation_config.json
+
+他の関数オーバーロードを使用する場合は、上記のjsonのうち対応する値を選んで引数に与えること。
+
+*/
+    }
+}

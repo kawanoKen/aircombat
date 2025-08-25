@@ -1,0 +1,21 @@
+/**
+
+\page page_r7_contest_tutorial 第4回空戦AIチャレンジ向けチュートリアル
+
+\subpage page_r7_contest_scenario
+
+\subpage page_r7_contest_match_maker
+
+\subpage page_r7_contest_agent_observables_and_commands
+
+\subpage page_r7_contest_initial_rulebased_agent
+
+\subpage page_r7_contest_agent_sample
+
+\subpage page_r7_contest_reward_sample
+
+\subpage page_r7_contest_handyrl_sample
+
+\subpage page_r7_contest_agent_as_package_and_minimum_evaluation
+
+*/

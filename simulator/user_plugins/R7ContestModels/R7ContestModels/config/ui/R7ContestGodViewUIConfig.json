@@ -1,0 +1,295 @@
+{
+    "horizontalUnit": "m",
+    "vUnit": "m/s",
+    "altUnit": "m",
+    "uiScalerType": "Min",
+    "Default": {
+        "region": {
+            "fieldMargin": [0.15,0.1,0.1],
+            "xyScaleType":"same",
+            "regionType":["fix","fix","fix"],
+            "slideRegion":false,
+            "w_margin": 0.01,
+            "h_margin": 0.01,
+            "h_xy": 0.64,
+            "h_yz": 0.33,
+            "draw_xy": true,
+            "draw_yz": true
+        },
+        "background": {
+            "visibility": true,
+            "color": [1.0, 1.0, 1.0, 1.0]
+        },
+        "grid": {
+            "visibility": true,
+            "scale": [20000.0, 20000.0, 4000.0],
+            "color": [0.6, 0.6, 0.6, 1.0]
+        },
+        "edge": {
+            "visibility": true,
+            "color": [0.0, 0.0, 0.0, 1.0]
+        },
+        "time": {
+            "visibility": true,
+            "color": [0.0, 0.706, 0.197, 1.0],
+            "mode":"elapsed"
+        },
+        "score": {
+            "visibility": true,
+            "color": [0.0, 0.706, 0.197, 1.0]
+        },
+        "reward": {
+            "visibility": true,
+            "color": [0.0, 0.706, 0.197, 1.0]
+        },
+        "policy": {
+            "visibility": true,
+            "color": [0.0, 0.0, 0.0, 1.0]
+        },
+        "fighter": {
+            "Default": {
+                "symbol": {
+                    "type": "2",
+                    "visibility": true,
+                    "color": [0.0, 0.353, 1.0, 1.0],
+                    "size": 3000.0
+                },
+                "trajectory": {
+                    "visibility": true,
+                    "color": [0.0, 0.353, 1.0, 1.0],
+                    "length":120.0
+                },
+                "lock-on range": {
+                    "visibility": false,
+                    "color": [0.4,0.4,1.0,0.1]
+                },
+                "radar coverage": {
+                    "visibility": true,
+                    "color": [0.4,0.4,1.0,0.1]
+                },
+                "status": {
+                    "visibility": true,
+                    "color": [0.0,0.0,0.0,1.0]
+                }
+            }
+        },
+        "missile": {
+            "Default": {
+                "Default": {
+                    "symbol": {
+                        "type": "2",
+                        "visibility": true,
+                        "color": [1.0,1.0,0.0,1.0],
+                        "size": 3000.0
+                    },
+                    "target": {
+                        "visibility": true,
+                        "color": [1.0,1.0,0.0,1.0]
+                    }
+                },
+                "self": {
+                    "symbol": {
+                        "color": [1.0,1.0,0.0,1.0]
+                    },
+                    "target": {
+                        "color": [1.0,1.0,0.0,1.0]
+                    }
+                },
+                "guided-active": {
+                    "symbol": {
+                        "color": [0.0,0.8,1,1]
+                    },
+                    "target": {
+                        "color": [0.0,0.8,1,1]
+                    }
+                },
+                "guided-inactive": {
+                    "symbol": {
+                        "color": [0,0,1,1]
+                    },
+                    "target": {
+                        "color": [0,0,1,1]
+                    }
+                },
+                "memory-active": {
+                    "symbol": {
+                        "color": [0.0,0.8,1,1]
+                    },
+                    "target": {
+                        "color": [0.0,0.8,1,1]
+                    }
+                },
+                "memory-inactive": {
+                    "symbol": {
+                        "color": [0.7,0.7,1,1]
+                    },
+                    "target": {
+                        "color": [0.7,0.7,1,1]
+                    }
+                }
+            }
+        },
+        "frontline": {
+            "visibility": false,
+            "color": [0.0, 0.6, 0.0, 1.0]
+        }
+    },
+    "Blue": {
+        "edge": {
+            "color": [0.0, 0.0, 1.0, 1.0]
+        },
+        "reward": {
+            "color": [0.197, 0.197, 1.0, 1.0]
+        },
+        "policy": {
+            "color": [0.0, 0.0, 1.0, 1.0]
+        },
+        "fighter": {
+            "Default": {
+                "lock-on range": {
+                    "color": [0.4,0.4,1.0,0.1]
+                },
+                "radar coverage": {
+                    "color": [0.4,0.4,1.0,0.1]
+                },
+                "symbol": {
+                    "color": [0.0, 0.353, 1.0, 1.0]
+                },
+                "trajectory": {
+                    "color": [0.0, 0.353, 1.0, 1.0]
+                }
+            },
+            "Escorted": {
+                "symbol": {
+                    "color": [0.25, 0.6, 0.6, 1.0]
+                },
+                "trajectory": {
+                    "color": [0.25, 0.6, 0.6, 1.0]
+                }
+            }
+        },
+        "missile": {
+            "Default": {
+                "self": {
+                    "symbol": {
+                        "color": [1.0,1.0,0.0,1.0]
+                    },
+                    "target": {
+                        "color": [1.0,1.0,0.0,1.0]
+                    }
+                },
+                "guided-active": {
+                    "symbol": {
+                        "color": [0.0,0.8,1,1]
+                    },
+                    "target": {
+                        "color": [0.0,0.8,1,1]
+                    }
+                },
+                "guided-inactive": {
+                    "symbol": {
+                        "color": [0,0,1,1]
+                    },
+                    "target": {
+                        "color": [0,0,1,1]
+                    }
+                },
+                "memory-active": {
+                    "symbol": {
+                        "color": [0.0,0.8,1,1]
+                    },
+                    "target": {
+                        "color": [0.0,0.8,1,1]
+                    }
+                },
+                "memory-inactive": {
+                    "symbol": {
+                        "color": [0.7,0.7,1,1]
+                    },
+                    "target": {
+                        "color": [0.7,0.7,1,1]
+                    }
+                }
+            }
+        }
+    },
+    "Red": {
+        "edge": {
+            "color": [1.0, 0.0, 0.0, 1.0]
+        },
+        "reward": {
+            "color": [1.0, 0.197, 0.197, 1.0]
+        },
+        "policy": {
+            "color": [1.0, 0.0, 0.0, 1.0]
+        },
+        "fighter": {
+            "Default": {
+                "lock-on range": {
+                    "color": [1.0,0.4,0.4,0.1]
+                },
+                "radar coverage": {
+                    "color": [1.0,0.4,0.4,0.1]
+                },
+                "symbol": {
+                    "color": [1,0.294,0.0,1]
+                },
+                "trajectory": {
+                    "color": [1,0.294,0.0,1]
+                }
+            },
+            "Escorted": {
+                "symbol": {
+                    "color": [1.0,0.25,1.0,1]
+                },
+                "trajectory": {
+                    "color": [1.0,0.25,1.0,1]
+                }
+            }
+        },
+        "missile": {
+            "Default": {
+                "self": {
+                    "symbol": {
+                        "color": [1.0,1.0,0.0,1.0]
+                    },
+                    "target": {
+                        "color": [1.0,1.0,0.0,1.0]
+                    }
+                },
+                "guided-active": {
+                    "symbol": {
+                        "color": [1.0,0.0,0.8,1]
+                    },
+                    "target": {
+                        "color": [1.0,0.0,0.8,1]
+                    }
+                },
+                "guided-inactive": {
+                    "symbol": {
+                        "color": [1,0,0,1]
+                    },
+                    "target": {
+                        "color": [1,0,0,1]
+                    }
+                },
+                "memory-active": {
+                    "symbol": {
+                        "color": [1.0,0.0,0.8,1]
+                    },
+                    "target": {
+                        "color": [1.0,0.0,0.8,1]
+                    }
+                },
+                "memory-inactive": {
+                    "symbol": {
+                        "color": [1,0.7,0.7,1]
+                    },
+                    "target": {
+                        "color": [1,0.7,0.7,1]
+                    }
+                }
+            }
+        }
+    }
+}

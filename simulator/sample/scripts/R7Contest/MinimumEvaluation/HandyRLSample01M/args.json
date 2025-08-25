@@ -1,0 +1,117 @@
+{
+    "interval":{
+        "unit":"time",
+        "step":3.0,
+        "perceive":1.0,
+        "control":1.0,
+        "behave":1.0
+    },
+
+    "maxParentNum":4,
+    "maxFriendNum":1,
+    "maxEnemyNum":5,
+    "maxFriendMissileNum":16,
+    "maxEnemyMissileNum":12,
+
+    "horizontalNormalizer":200000.0,
+    "verticalNormalizer":20000.0,
+    "fgtrVelNormalizer":300.0,
+    "mslVelNormalizer":1200.0,
+
+    "use_observation_mask":true,
+    "use_action_mask":true,
+    "raise_when_invalid_action":true,
+
+    "use_virtual_simulator":false,
+    "virtual_simulator_value_when_no_missile":100000.0,
+    "virtual_simulator_maxNumPerParent":10,
+    "virtual_simulator_launchInterval":5,
+    "virtual_simulator_kShoot":0.3,
+    
+    "use_image_observation":false,
+    "image_longitudinal_resolution":24,
+    "image_lateral_resolution":24,
+    "image_front_range":200000.0,
+    "image_back_range":0.0,
+    "image_side_range":75000.0,
+    "image_horizon":60,
+    "image_interval":1,
+    "image_rotate":false,
+    "image_relative_position":true,
+    "draw_parent_trajectory":true,
+	"draw_friend_trajectory":true,
+	"draw_enemy_trajectory":true,
+	"draw_friend_missile_trajectory":true,
+	"draw_parent_radar_coverage":true,
+	"draw_friend_radar_coverage":true,
+	"draw_defense_line":true,
+	"draw_side_line":true,
+
+    "use_remaining_time":true,
+    "remaining_time_clipping":10,
+
+    "use_parent_last_action":true,
+
+    "use_friend_position":true,
+    "use_friend_velocity":true,
+    "use_friend_initial_num_missile":true,
+    "use_friend_current_num_missile":true,
+    "use_friend_attitude":true,
+    "use_friend_angular_velocity":true,
+    "use_friend_current_fuel":true,
+    "use_friend_rcs_scale":true,
+    "use_friend_radar_range":true,
+    "use_friend_radar_coverage":true,
+    "use_friend_maximum_speed_scale":true,
+    "use_friend_missile_thrust_scale":true,
+
+    "use_enemy_position":true,
+    "use_enemy_velocity":true,
+
+    "use_friend_missile_position":true,
+    "use_friend_missile_velocity":true,
+    "use_friend_missile_flight_time":true,
+    "use_friend_missile_target_distance":true,
+    "use_friend_missile_target_mode":true,
+    "use_friend_missile_target_position":true,
+    "use_friend_missile_target_velocity":true,
+
+    "use_enemy_missile_observer_position":true,
+    "use_enemy_missile_direction":true,
+    "use_enemy_missile_angular_velocity":true,
+
+    "use_our_missile_range":true,
+    "use_their_missile_range":true,
+
+    "dstAz_relative":true,
+    "turnTable":[-45,-30,-15,-10,-5,0,5,10,15,30,45],
+    "use_override_evasion":true,
+    "evasion_turnTable":[-45,-30,-15,-10,-5,0,5,10,15,30,45],
+    "no_vertical_maneuver":false,
+    "use_altitude_command":false,
+    "altTable":[-8000,-4000,-2000,-1000,0,1000,2000,4000,8000],
+    "refAltInterval":1000,
+    "pitchTable":[-45,-30,-15,-10,-5,0,5,10,15],
+    "accelTable":[-10.0,-5.0,-2.5,0.0,2.5,5.0,10.0],
+    "always_maxAB":true,
+    "use_Rmax_fire":true,
+    "shotIntervalTable":[5,10,20,40,80],
+    "shotThresholdTable":[0.0,0.1,0.2,0.3,0.4,0.5],
+
+    "altMin":2000,
+    "altMax":15000,
+    "dOutLimit":7500,
+    "dOutLimitThreshold":15000,
+    "dOutLimitStrength":1e-3,
+    "maxSimulShot":4,
+    "minimumV":150.0,
+    "minimumRecoveryV":180.0,
+    "minimumRecoveryDstV":200.0,
+
+    "altitudeKeeper":{
+        "pGain":-3e-1,
+        "dGain":-1e-1,
+        "minPitch":-0.524,
+        "maxPitch":0.524
+    }
+}

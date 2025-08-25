@@ -1,0 +1,12 @@
+/**
+
+\mainpage R7ContestModels
+\anchor mainpage_R7ContestModels
+
+第4回空戦チャレンジ用の空対空戦闘シナリオを表現するためのクラス・モデルを追加するプラグイン
+
+
+
+[ドキュメントのトップに戻る(ASRCAISim1)](\ref mainpage_core)
+
+*/

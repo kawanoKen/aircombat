@@ -1,0 +1,4 @@
+var searchData=
+[
+  ['quaternion_0',['Quaternion',['../../core/a193417.html#abcc01358aada56ea5f0db4da18aaf77d',1,'asrc::core::Quaternion::Quaternion()'],['../../core/a193417.html#af08eeff337ab7154bc66955d4cd150a3',1,'asrc::core::Quaternion::Quaternion(const double &amp;w, const Eigen::Vector3d &amp;vec_)'],['../../core/a193417.html#a5b03bc281dd4c11a91f6df260b89c93c',1,'asrc::core::Quaternion::Quaternion(const double &amp;w, const double &amp;x, const double &amp;y, const double &amp;z)'],['../../core/a193417.html#a5e7043dd4886c747ed31546f6258ed01',1,'asrc::core::Quaternion::Quaternion(const Eigen::Vector4d &amp;v)'],['../../core/a193417.html#a819c31ddcab40c0c3997dd9aa9237f31',1,'asrc::core::Quaternion::Quaternion(const Eigen::Quaternion&lt; double &gt; &amp;other)'],['../../core/a193417.html#acae9b6b6548813cbcbd1f5b641e4f064',1,'asrc::core::Quaternion::Quaternion(const Quaternion &amp;other)']]]
+];

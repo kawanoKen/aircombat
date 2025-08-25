@@ -1,0 +1,23 @@
+/**
+
+\page page_user_plugins user plugin
+
+\section section_user_plugin 同梱しているuser pluginの一覧
+
+\subsection section_user_plugin_as_non_sample 通常のプラグイン
+
+user_plugins以下にあるパッケージは、主に各種クラス・モデルを追加するためのプラグインである。
+　
+- [BasicAirToAirCombatModels01](\ref mainpage_BasicAirToAirCombatModels01)…基本的な空対空戦闘のルールやルールベース行動判断モデルを追加するプラグイン
+- [BasicAgentUtility](\ref mainpage_BasicAgentUtility)…空対空戦闘のAgentクラスを実装するためのユーティリティ機能を追加するプラグイン
+- [R7ContestModels](\ref mainpage_R7ContestModels)…第4回空戦チャレンジ用の空対空戦闘シナリオを表現するためのクラス・モデルを追加するプラグイン
+
+\subsection section_user_plugin_as_sample サンプル扱いのプラグイン
+
+sample/modules以下にあるパッケージはユーザが独自プラグインを作成するためのサンプルという位置づけで作成されたプラグインである。
+
+- [cpp_template](\ref mainpage_cpp_template)…C++を用いて独自プラグインを作成するためのひな形。Pythonクラスも追加可能。
+- [py_template](\ref mainpage_py_template)…Pythonのみを用いて独自プラグインを作成するためのひな形
+- [R7ContestSample](\ref mainpage_R7ContestSample)…第4回空戦AIチャレンジの戦闘シナリオに合わせて基本的な強化学習を行うための行動判断モデルのサンプル
+
+*/

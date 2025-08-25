@@ -1,0 +1,43 @@
+{"Factory":{
+    "Viewer":{
+        "R7ContestOpenGod":{
+            "class":"R7ContestGodView",
+            "model":"DefaultMRMGod",
+            "config":{
+                "interval":{
+                    "unit":"time",
+                    "value":1.0
+                }
+            }
+        },
+        "R7ContestYouthGod":{
+            "model":"R7ContestOpenGod",
+            "config":{
+                "panelConfig":{
+                    "Default": {
+                        "region": {
+                            "fieldMargin": [0.15,0.1,0.1],
+                            "xyScaleType":"same",
+                            "regionType":["fix","fix","fix"],
+                            "slideRegion":false,
+                            "w_margin": 0.01,
+                            "h_margin": 0.01,
+                            "h_xy": 0.92,
+                            "h_yz": 0.05
+                        },
+                        "grid": {
+                            "scale": [20000.0, 20000.0, 20000.0]
+                        },
+                        "fighter": {
+                            "Default": {
+                                "radar coverage": {
+                                    "visibility": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}}

@@ -1,0 +1,173 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_r7_contest_agent_observables_and_commands Agent が入出力 observables と commands の形式
+
+このページでは、第4回空戦AIチャレンジのシナリオで
+Agent が Fighter から受け取ることのできる observables と、
+Fighter に渡す必要のある commands の形式を説明する。
+
+# Agent が受け取ることのできる observables {#section_r7_contest_agent_observables}
+
+Agent が受け取ることのできる observablesは以下の形式である。
+
+なお、 MotionState 、 Track3D 、 Track2D の部分も以下のようにjson化された値が入る。
+- [MotionStateのjson表現](#section_simulation_MotionState_MotionState_json)
+- [Track3Dのjson表現](#section_simulation_Track_Track3D_json)
+- [Track2Dのjson表現](#section_simulation_Track_Track2D_json)
+
+```
+{
+    "isAlive": bool, # 生存中か否か
+    "spec": { # 性能に関する値（戦闘中不変）
+        "dynamics": { # 運動性能に関する値
+            "scale": { # 運動性能の基準値からの変動倍率
+                "vMin": float, # 最小速度の倍率
+                "vMax": float, # 最大速度の倍率
+                "accelMin": float, # 最小加速度の倍率
+                "accelMax": float, # 最大加速度の倍率
+                "rollMin": float, # 最小ロール角速度の倍率
+                "rollMax": float, # 最大ロール角速度の倍率
+                "pitchMin": float, # 最小ピッチ角速度の倍率
+                "pitchMax": float, # 最大ピッチ角速度の倍率
+                "yawMin": float, # 最小ヨー角速度の倍率
+                "yawMax": float, # 最大ヨー角速度の倍率
+            }
+        },
+        "propulsion": { # 推進系(エンジン)の性能に関する値
+            "fuelCapacity": float, # 燃料タンクの容量[kg]
+            "optCruiseFuelFlowRatePerDistance": float, # 最適な(燃料消費が最小な)巡航高度・速度で水平飛行した際の単位距離あたりの燃料消費量[kg/m]
+        },
+        "weapon": { # 武装に関する値
+            "numMsls": int, # 初期誘導弾数
+            "missile": { # 誘導弾性能に関する値
+                "tMax": float, # 誘導弾最大飛翔時間[s]
+                "tBurn": float, # 誘導弾燃焼時間[s]
+                "hitD": float, # 誘導弾命中半径[m]
+                "thrust": float, # 誘導弾推力[N]
+            }
+        },
+        "stealth": { # 被探知性能に関する値
+            "rcsScale": float, # RCS スケール(無次元量として扱う)
+        },
+        "sensor": { # センサに関する値
+            "radar": { # レーダに関する値 (護衛対象機のobservablesには含まれない)
+                "Lref": float, # 基準探知距離(rcsScale=1の目標に対する最大探知距離)[m]
+                "thetaFOR": float, # 探知可能覆域[rad]
+            },
+            "mws": { # MWS に関する値
+                "isEsmIsh": bool, # 電波センサとして扱う場合にTrue、光波センサとして扱う場合にFalse
+                "Lref": float, # 基準探知距離[m]
+                "thetaFOR": float, # 探知可能覆域[rad]
+            }
+        }
+    },
+    "motion": MotionState, #　現在の運動状態
+    "propulsion": { # 推進系(エンジン)の現在の状態量
+        "fuelRemaining": float, # 残燃料[kg]
+    },
+    "sensor": { # 現在の探知状況に関する値
+        "radar": { # 自機レーダの探知状況に関する値 (護衛対象機のobservablesには含まれない)
+            "track": list[Track3D], # 自機レーダが探知した3次元航跡のリスト
+        },
+        "mws": { # 自機 MWS の探知状況に関する値
+            "track": list[Track2D], # 自機 MWS が探知した2次元航跡のリスト
+        },
+        "track": list[Track3D], # 編隊内で共有し統合された3次元航跡のリスト
+        "trackSource": list[list[str]], # 編隊内で共有し統合された3次元航跡それぞれの、統合元となった機体名のリストのリスト
+    },
+    "weapon": { # 現在の武装状況に関する値
+        "remMsls": int, # 現在の残弾数
+        "nextMsl": int, # 次に射撃する誘導弾の ID
+        "launchable": bool, # 現在射撃可能な状態か否か。残弾数が 0 でなく、かつ人間介入モデルの記憶容量が上限に達していない場合に可となる。
+        "missiles": list[dict], # 各誘導弾に関する observables のリスト(内訳は後述)
+    },
+    "shared": { # 味方から共有された情報
+        "agent": { # 味方から共有された、 Agent に関する情報
+            "obs": dict, # 自陣営の Agent 自身が生成した固有の observables であり、
+                         # それらを merge_patch したものが格納される。
+                         # 一例として、行動意図を表す"decision"は、各 parent の fullName をキーとしたdictとして格納されることになる。
+        },
+        "fighter": dict, # 味方機の observables。
+                         # 自身を含む各機の名称をキーとして、各機の observables のうち
+                         # 重複が無駄となる"/shared/*"、"/sensor/track"、"/sensor/trackSource"以外の値が格納される。
+    }
+}
+```
+
+## 誘導弾に関するobservables {#section_r7_contest_missile_observables}
+
+observables["weapon"]["missiles"]のリストに格納される誘導弾のobservablesは以下の形式である。
+
+launchedTの部分は[Timeのjson表現](#section_simulation_TimeSystem_Time_json)で格納される。
+
+```
+{
+    "isAlive": bool, # 生存中か否か
+    "hasLaunched": bool, # 発射済みか否か
+    "launchedT": Time, # 発射時刻。未発射の場合は無効な値。
+    "mode": str, # 目標の追尾状況であり、以下の3種類のいずれか。
+                 # - "guided": 母機から供給された航跡を使用中
+                 # - "self": 自身のセンサで捉えた航跡を使用中
+                 # - "memory": メモリトラックにより外挿中
+    "target": Track3D # 目標の3次元航跡
+}
+```
+
+# Agent が出力すべき commands {#section_r7_contest_agent_commands}
+
+Agent が Fighter に渡す必要のある commands 以下の形式である。
+
+```
+{
+    "motion": {
+        # 飛行制御モードが"direct"の場合
+        "roll": float, # ロールに関する指示([-1,+1]で正規化し、負側を左旋回とする。)
+        "pitch": float, # ピッチに関する指示([-1,+1]で正規化し、負側を下降とする。)
+        "yaw": float, # ヨーに関する指示([-1,+1]で正規化し、負側を左旋回とする。)
+        "throttle": float # 加減速による速度指示([-1,+1]で正規化し、負側を減速とする。) ※accelとthrottleはいずれか一つのみ指定可。
+        "accel": float  # スロットルによる速度指示([0,+1]で正規化する。) ※accelとthrottleはいずれか一つのみ指定可。
+
+        # 飛行制御モードが"fromDirAndVel"の場合
+        "dstDir": [float,float,float], # 目標進行方向(単位ベクトル) ※dstDirとdstTurnRateはいずれか一つのみ指定可。
+        "dstTurnRate": float, # 目標旋回率[rad/s] ※dstDirとdstTurnRateはいずれか一つのみ指定可。
+        "dstAlt": float, # 目標高度[m] ※dstDirを指定した場合のみ指定可。
+        "dstV": float, # 目標速度[m/s] ※ dstV,dstAccel,dstThrust,dstThrottleはいずれか一つのみ指定可。
+        "dstAccel": float, # 目標加速度[m/s^2] ※ dstV,dstAccel,dstThrust,dstThrottleはいずれか一つのみ指定可。
+        "dstThrust": float, # 目標推力[N] ※ dstV,dstAccel,dstThrust,dstThrottleはいずれか一つのみ指定可。
+        "dstThrottle": float, # 目標スロットル([0,+1]で正規化) ※ dstV,dstAccel,dstThrust,dstThrottleはいずれか一つのみ指定可。
+    },
+    "weapon": {
+        "launch": bool, # 射撃するか否か
+        "target": Track3D # 射撃する対象の 3 次元航跡
+    }
+}
+```
+
+# Agent が アクセス可能な Accessor {#section_r7_contest_agent_accessible_accessors}
+
+Agent は、 observables と commads 以外にも、以下の Accessor を用いて環境との相互作用が可能である。
+
+- parents の Accessor
+
+    メンバ変数 [parents](\ref Agent::parents)の値は、オープン部門、ユース部門ともに、
+    [R7ContestMassPointFighter](\ref R7ContestModels::R7ContestMassPointFighter)クラスとともに定義された
+    [R7ContestMassPointFighterAccessor](\ref R7ContestModels::R7ContestMassPointFighterAccessor) のインスタンスである。
+    利用可能なメンバの一覧はリンク先を参照されたい。
+
+- Ruler の Accessor
+
+    メンバ変数 [ruler](\ref Agent::ruler)は、オープン部門、ユース部門ともに、
+    RulerAccessor のインスタンスである。
+    利用可能なメンバの一覧はリンク先を参照されたい。
+
+- SimulationManager の Accessor
+
+    メンバ変数 [manager](\ref Agent::manager)は、オープン部門、ユース部門ともに、
+    SimulationManagerAccessorForAgent のインスタンスである。
+    利用可能なメンバの一覧はリンク先を参照されたい。
+
+*/
+    }
+}

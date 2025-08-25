@@ -1,0 +1,327 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_execution_interface シミュレータの生成及び外部インターフェース
+
+# SimulationManager クラス {#section_simulation_execution_SimulationManager}
+
+本シミュレータにおいてシミュレーションの実行管理を行うオブジェクトは
+SimulationManager クラスである。
+
+本シミュレータは主に強化学習用環境として用いる想定で作成されているため、
+[こちら](\ref section_simulation_flow)に記載のとおり、
+gymnasium.Env のインターフェースに沿って[reset](\ref SimulationManager::reset)と[step](\ref SimulationManager::step)
+の繰り返しによりシミュレーションが進行する。
+
+## コンストラクタ {#section_simulation_execution_SimulationManager_constructor}
+
+SimulationManager のコンストラクタ引数は以下の4つである。
+- const nl::json& config_
+
+    コンフィグ。json object(dict)で与える。書式は[後述](\ref section_simulation_execution_SimulationManager_config_format)。
+- const std::int32_t& worker_index_
+
+    worker indexを指定する。プロセス中の全 EntityManager インスタンスに影響する。
+- const std::int32_t& vector_index_
+
+    vector indexを指定する。
+- std::function<nl::json(const nl::json&,const std::int32_t&,const std::int32_t&)> overrider_
+
+    config_ の内容を worker_index_ と vector_index_ の内容に応じてオーバーライドしたい場合、
+    その処理を行う関数オブジェクトを与える。省略可。
+
+## コンフィグの書式 {#section_simulation_execution_SimulationManager_config_format}
+
+config_の形式は、  doc/src/format/SimulationManager_config.json のとおりであるが、
+必ずしも完全な形のjson objectを直接与える必要はなく、
+以下のように細分化したjsonファイルやjson objectを組み合わせて自動構成することができる。
+
+- ファイルパスで指定
+
+    jsonファイルの中身をそのまま採用する。
+
+- json objectで指定
+
+    json objectをそのまま採用する。
+
+- ファイルパス又はjson objectのリストで指定
+
+    先頭要素から順にmerge patchでマージしたものを採用する。
+
+マージ後の完全な形のconfig_は以下のような形となる。
+@include{strip} doc/src/format/SimulationManager_config.json
+
+## PhysiacalAsset の生成について {#section_simulation_execution_asset_config_dispatch}
+
+エピソード初期化時の PhysicalAsset 生成は、
+[ConfigDispatcherによる再帰的な変換](\ref page_simulation_config_dispatcher)
+機能を用いて実現している。
+
+config_["/Manager/AssetConfigDispatcher"]をaliasesとして
+[ConfigDispatcher](\ref page_simulation_config_dispatcher)インスタンスを生成し、
+config_["/Manager/Assets"]を引数として[ConfigDispatcher::run](#section_simulation_config_dispatcher_dispatch)
+を呼び出す。
+
+その結果は、エピソード開始時に登場する全 PhysicalAsset のfull name、モデル名、instanceConfig及び対応する Agent を表す
+以下のような階層構造を持ったobject(dict)となっていなければならない。
+```
+{
+    "Blue": { # 再外層は 陣営名として扱われる
+        "Group1": { #中間層はグループ名として扱われる
+            "Asset1":{ # 末端は"type"=="PhysicalAsset"となる。この場合のfull nameは"Blue/Group1/Asset1"として生成される。
+                "type":"PhysicalAsset",
+                "model": "ModelA", # モデル名を指定する
+                "instanceConfig":{ # instanceConfigがあれば指定する
+                    ...
+                },
+                "Agent": Any # この PhysiacalAsset に紐付けられる Agent の
+                             # 生成用config(後述)を表すdict。
+                             # あるいは Agent用ConfigDispatcherによって
+                             # 同等の内容に展開可能な任意のjsonを与えてもよい。
+            },
+            ...
+        }
+    },
+    "Red":{  # 再外層は 陣営名として扱われる
+        ...
+    }
+}
+```
+この展開結果に従って PhysicalAsset インスタンスの生成が行われる。
+
+なお、 ConfigDispatcher を用いずに上記の構造を直接記述しても支障はない。
+
+## Agent の生成について {#section_simulation_execution_agent_config_dispatch}
+
+エピソード初期化時の Agent 生成は、
+[ConfigDispatcherによる再帰的な変換](\ref page_simulation_config_dispatcher)
+機能を用いて実現している。
+
+config_["/Manager/AgentConfigDispatcher"]をaliasesとして
+[ConfigDispatcher](\ref page_simulation_config_dispatcher)インスタンスを生成しておく。
+
+PhysicalAsset の生成時に用いた展開結果において、各 PhysicalAsset が"Agent"キーを持っていた場合、
+それを引数として[ConfigDispatcher::run](#section_simulation_config_dispatcher_dispatch)
+を呼び出す。
+
+その結果は、
+```
+{
+    "name":str, # Agent の名前
+    "port":str, # Agent のポート名
+    "type":str, # Agent の種類
+    ... # その他種類に応じた要素
+}
+```
+となっている必要がある。
+
+Agentの種類と、追加で指定が必要な要素は以下のとおり。
+- Internal
+
+    Observation と Action が不要な、Agent クラス単体で行動判断が完結する Agent を指し、
+    ポリシー名が自動的に"Internal"となる。step 関数に与える Action には、
+    このような Agent に対応する Action を含めなくてもよい(省略しても任意の値を与えてもよい)。
+
+    追加要素は以下のとおり。
+    - model
+
+        Factory におけるモデル名を表す文字列。省略不可。
+- External
+
+    Observation と Action の入出力が必要な Agent クラス。
+
+    追加要素は以下のとおり。
+    - model
+
+        Factory におけるモデル名を表す文字列。省略不可。
+    - policy
+
+        ポリシー名を表す文字列。省略不可。
+- ExpertE
+
+    模倣学習を行うための [ExpertWrapper](#section_training_imitation_ExpertWrapper) のうち、
+    親 Asset への command と環境外部へのobservation として expert の出力を用いるもの。
+
+    追加要素は以下のとおり。
+    - imitatorModel
+
+        模倣する側のFactory におけるモデル名を表す文字列。省略不可。
+    - expertModel
+
+        模倣される側のFactory におけるモデル名を表す文字列。省略不可。
+    - expertPolicy
+
+        模倣される側のポリシー名を表す文字列。省略時は"Internal"となる。
+    - identifier
+
+        模倣用の軌跡データを出力する際の識別名。省略時は imitatorModelName と同一となる。
+- ExpertI
+
+    模倣学習を行うための [ExpertWrapper](#section_training_imitation_ExpertWrapper) のうち、
+    親 Asset への command と環境外部へのobservation として imitator の出力を用いるもの。
+
+    追加要素は ExpertE と同じ。
+- ExpertBE
+
+    模倣学習を行うための [ExpertWrapper](#section_training_imitation_ExpertWrapper) のうち、
+    親 Asset への command として expert の出力を用い、
+    環境外部への observation として両方の出力を用いるもの。
+
+    追加要素は ExpertE と同じ。
+- ExpertBI
+
+    模倣学習を行うための [ExpertWrapper](#section_training_imitation_ExpertWrapper) のうち、
+    親 Asset への command として imitator の出力を用い、
+    環境外部への observation として両方の出力を用いるもの。
+
+    追加要素は ExpertE と同じ。
+
+# gymnasium インターフェース {#section_simulation_execution_as_gymnasium_env}
+
+本シミュレータを利用する際は、 SimulationManager クラスのインスタンスを直接生成するよりも、
+gymnasium.Env を継承したマルチエージェント環境として実装されたラッパークラスである
+ASRCAISim1.GymManager クラスを使用することを推奨する。
+
+## GymManager クラス {#section_simulation_execution_GymManager}
+
+### コンストラクタ(__init__) {#section_simulation_execution_GymManager_init}
+
+コンストラクタ引数は、以下のようなcontextを表すdictとする。
+
+```python
+context={
+    "config":Union[Dict[str,Any]|List[Union[Dict[str,Any]|str]]], # SimulationManager のコンストラクタに与えるconfigを指定する。
+
+    "worker_index":int, # worker indexを指定する。省略時は0。
+                        #プロセス中の全シミュレーションインスタンスに影響する。
+
+    "vector_index":int, # vector indexを指定する。省略時は0。
+    
+    "overrider":Optional[Callable[[Dict[str,Any],int,int],Dict[str,Any]]], # worker_index及びvector_indexに応じたconfig置換関数を用いる場合はここで与える。
+                                                                           # std::function<nl::json(const nl::json&,const std::int32_t&,const std::int32_t&)>相当。
+
+    "manager_class":Optional[Type], # SimulationManager 以外のクラスを使用したい場合はそのクラスオブジェクトを与える。
+}
+```
+
+### コンフィグの書き換え {#section_simulation_execution_GymManager_reconfigure}
+
+本シミュレータは、同一の SimulationManager インスタンスを複数エピソードにわたって
+繰り返し使い続けるものとしているが、複数のエピソードを並列に実行したい場合や、
+一定エピソードごとに登場物やルール、報酬等を変更したい場合も想定される。
+
+そのような場合に SimulationManager インスタンスを再生成することなく対応するために、
+SimulationManager インスタンス生成時と各エピソード開始時にコンフィグを書き換える機能を有している。
+
+書き換え対象は SimulationManager のコンストラクタ引数 config として与えられるもの、
+すなわち、 SimulationManager 自身のコンフィグ(Managerコンフィグ)と、
+Factory に登録しているモデルのコンフィグ(Factoryコンフィグ)の2種類であり、
+クラスの置換には対応していない。
+
+#### インスタンス生成時の書き換え {#section_simulation_execution_GymManager_reconfigure_at_instantiation}
+
+SimulationManager のコンストラクタに与える config を複数使い分けることでも
+インスタンスごとに異なる環境として生成することが可能であるが、
+強化学習ライブラリの仕様によってはコンストラクタ引数を変えることが困難であることも想定される。
+
+そのため、 SimulationManager のコンストラクタ引数として、
+config を書き換えるための 関数オブジェクトとして overrider を与えることによって、
+コンストラクタ内部で config を書き換える処理を行うことを可能としている。
+
+overrider が取る引数は full config, worker index, vector indexの3つとし、書き換え後のfull configを返すものとする。
+
+#### エピソード開始時の書き換え {#section_simulation_execution_GymManager_reconfigure_on_episode_begin}
+
+エピソード開始時の書き換えは、reset 関数の呼び出し前までに、
+SimulationManager の [requestReconfigure](\ref SimulationManager::requestReconfigure(const nl::json&)) 関数に
+Manager と Factory 登録モデルそれぞれの置換用 json を与えることで、
+次の reset 関数の先頭で書き換えが実行される。
+
+置換用 json は、元の json に対して適用すべき merge_patch として与えるものとする。
+使用方法としては、対戦ごとに各陣営の Agent を変更したり、
+学習の進捗に応じてルールや報酬を変更したりするような場合を想定しており、
+環境の外部から呼び出すことも、Callback クラスによって内部から呼び出すことも可能である。
+
+なお、ラッパークラスである [GymManager](\ref ASRCAISim1.GymManager.GymManager) クラスからも
+[requestReconfigure](\ref ASRCAISim1.GymManager.GymManager.requestReconfigure)関数の呼び出しが可能である。
+
+## SinglizedEnv クラス {#section_simulation_execution_SinglizedEnv}
+
+[SinglizedEnv](\ref ASRCAISim1.GymManager.SinglizedEnv) クラスは [GymManager](\ref ASRCAISim1.GymManager.GymManager) の派生クラスであり、
+登場する Agent のうち指定した一つのみの Observation, Action を入出力し、
+それ以外の Agent の行動を環境内部で計算することによってシングルエージェント環境としたものである。
+
+マルチエージェント環境に対応していない強化学習ライブラリを使用したり、
+模倣学習時に学習対象の Agent を限定するために使用したりすることを想定している。
+
+入出力の対象とならなかった Agent については、コンストラクタにおいて
+[StandalonePolicy](\ref section_simulation_execution_StandalonePolicy)オブジェクトを渡すことで、
+環境の内部で Action の計算を行う。
+
+また、入出力対象とする Agent はその fullName によって判定するものとし、
+コンストラクタに与えた判定用の関数で最初に True となった Agent を対象とする。
+コンストラクタ引数 context には [GymManager](\ref ASRCAISim1.GymManager.GymManager) が必要とするものに加え以下の値を追加したものである。
+
+```python
+context.update({
+    "target":Union[Callable[[str],bool],str], # observation,actionの入出力対象のAgentを特定するための関数。
+                                              # AgentのfullNameを引数にとってboolを返す関数を与える。
+                                              # 最初にTrueとなったAgentを対象とみなす。
+                                              # Callableの代わりに文字列を指定した場合、
+                                              # その文字列で始まるかどうか(startswith)を判定条件にすることが可能。
+
+    "policies": Dict[str,StandalonePolicy], # 内部でactionを計算するためのStandalonePolicyオブジェクトのdict。
+                                            # キーはポリシー名とする。
+
+    "policyMapper": Optional[Callable[[str],str]], # AgentのfullNameから使用するpolicyの名称を計算する。
+                                                   # 省略した場合はデフォルトの命名規則に従い、full nameの末尾にあるポリシー名が使われる。
+    
+   "runUntilAllDone": bool, # 対象AgentのdoneがTrueとなっても、done["__all__"]がTrueとなるまで内部で
+                            # エピソードの計算を継続するか否か。デフォルトはTrue。
+})
+```
+
+# SimpleEvaluator {#section_simulation_execution_SimpleEvaluator}
+
+最小限の評価用環境として、全 Agent の行動判断を StandalonePolicy によって内部で処理し、
+GymManager を用いたエピソードの実行を自動で行う SimpleEvaluator クラスを実装している。
+
+# StandalonePolicy {#section_simulation_execution_StandalonePolicy}
+
+通常、gymnasium 環境においてエピソードの実行は外部から制御されるため、
+ポリシーが Action を計算する処理の実装方法は制約が無い。
+しかし、例えば異なる手法で学習された複数の行動判断モデルどうしを戦わせて評価したい場合や、
+一部の Agent について環境の内部で処理を済ませたい場合を想定して、
+本シミュレータでは [StandalonePolicy](\ref ASRCAISim1.policy.StandalonePolicy.StandalonePolicy) クラスとしてポリシーの推論のための共通インターフェースを定義している。
+
+[StandalonePolicy](\ref ASRCAISim1.policy.StandalonePolicy.StandalonePolicy) クラスは
+引数、返り値なしの [reset](\ref ASRCAISim1.policy.StandalonePolicy.StandalonePolicy.reset()) 関数と、
+Observation 等を入力して Action を出力する [step](\ref ASRCAISim1.policy.StandalonePolicy.StandalonePolicy.step()) 関数の二つを有するものとし、
+それぞれ環境側の reset,step と対になるものである。step 関数の引数として与えられる変数は以下の通りである。
+
+名称             |概要
+-----------------|-----------
+observation      |Environmentから得られたobservation。
+reward           |Environmentから得られたreward。
+done             |Environmentから得られたdone。
+info             |Environmentから得られたinfo。
+agentFullName    | 計算対象のAgentの完全な名称であり、agentName:modelName:policyNameの形をとる。
+observation_space| 与えられたObservationのSpace。
+action_space     | 計算すべきActionのSpace。
+
+
+## Agentのfull nameの書式 {#section_simulation_execution_Agent_naming_convention}
+
+本シミュレータにおける Agent のfull nameの命名規則は、
+インスタンス名、モデル名、ポリシー名を":"で繋いだものとする。
+例えばインスタンス名が"Agent1"、モデル名が"AgentModel1"、ポリシー名が"Policy1"である場合、
+Agentのfull nameは"Agent1:AgentModel1:Policy1"となる。
+
+また、ポリシー名について"Internal"は予約語としており、Action の計算が不要で本シミュレータの
+内部で動作が完結するタイプの Agent を示すものとして扱っている。
+
+
+*/
+    }
+}

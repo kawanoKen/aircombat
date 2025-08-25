@@ -1,0 +1,122 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_Track 航跡情報の表現方法(TrackBase, Track3D, Track2D)
+
+　本シミュレータにおいて、各種センサによって捉えた航跡情報は、
+TrackBase クラスを基底クラスとして、 
+3次元航跡を表す Track3D クラスと2次元航跡を表す Track2D クラスに分けられる。
+
+これらのクラスを継承し、又は全く異なる航跡クラスを使用することも許容される。
+
+# 3次元航跡 (Track3D) {#section_simulation_Track_Track3D}
+
+3次元航跡を表す Track3D クラスは、
+ある[座標系](\ref page_simulation_Coordinate)における
+位置、速度及び航跡の生成時刻を保持するものとして扱う。
+また、航跡は必ずそれがどの PhysicalAsset を指したものかを示す情報を付加しており、
+誤相関が発生しない理想的なものとして扱うこともできるようになっている。
+
+## Track3D クラスのjson表現 {#section_simulation_Track_Track3D_json}
+
+key             |value                                                               |load時の省略可否
+----------------|--------------------------------------------------------------------|----------------
+polymorphic_name|"asrc::core::Track3D" (派生クラスの場合は派生クラスの完全修飾名)    |不可
+crs             |[座標系のjson表現](\ref section_simulation_Entity_as_reference_json)|不可
+time            |[Timeのjson表現](\ref section_simulation_TimeSystem_Time_json)      |不可
+truth           |この航跡が指すPhysicalAsset を識別するUUIDを表す文字列              |不可
+pos             |位置の座標値 (array)                                                |不可
+vel             |速度の座標値 (array)                                                |不可
+buffer          |マージ用の Track3D リスト (array of Track3D)                          |不可
+
+# 2次元航跡 (Track2D) {#section_simulation_Track_Track2D}
+
+2次元航跡を表す Track2D クラスは、
+ある[座標系](\ref page_simulation_Coordinate)における
+観測点の位置、観測点から見た目標の方向及び方向変化率並びに生成時刻を保持するものとして扱う。
+また、 Track3D と同様に、どの PhysicalAsset を指したものかを示す情報を付加している。
+
+## Track2D クラスのjson表現 {#section_simulation_Track_Track2D_json}
+
+key             |value                                                               |load時の省略可否
+----------------|--------------------------------------------------------------------|----------------
+polymorphic_name|"asrc::core::Track2D" (派生クラスの場合は派生クラスの完全修飾名)    |不可
+crs             |[座標系のjson表現](\ref section_simulation_Entity_as_reference_json)|不可
+time            |[Timeのjson表現](\ref section_simulation_TimeSystem_Time_json)      |不可
+truth           |この航跡が指すPhysicalAsset を識別するUUIDを表す文字列              |不可
+origin          |観測点の位置の座標値 (array)                                        |不可
+dir             |方向の座標値 (array)                                                |不可
+omega           |方向変化率の座標値 (array)                                          |不可
+buffer          |マージ用の Track2D リスト (array of Track2D)                          |不可
+
+# 時刻の外挿 {#section_simulation_Track_extrapolation}
+
+Track3D と Track2D は [MotionState](\ref section_simulation_MotionState_extrapolation) と同様に
+生成時刻の情報を保持しており、
+指定した時間 dt だけ外挿する[extrapolate(dt)](\ref Track3D::extrapolate(const double&))と、
+指定した時刻 dstTime まで外挿する[extrapolate(dstTime)](\ref Track3D::extrapolateTo(const Time&))
+の 2 種類の関数によって状態量を外挿することができる。
+
+# 航跡のマージ {#section_simulation_Track_merge}
+
+Track3D と Track2D はそれぞれ、複数の同種の航跡の平均を取ってマージすることができる。
+元の航跡に [addBuffer](\ref Track3D::addBuffer) 関数によってマージ対象の航跡を追加していき、
+最後に [merge](\ref Track3D::merge) 関数を呼ぶことでそれらの平均をとったものとして更新される。
+
+# 同一性の判定 {#section_simulation_Track_identification}
+
+Track3D と Track2D は、簡略化のために誤相関は発生しないものとして扱うことを可能としており、
+それらがどの PhysicalAsset を指した航跡なのかという情報をメンバ変数[truth](\ref TrackBase::truth)に真値で保持している。
+また、ある航跡に対して他の航跡または PhysicalAsset を与えられたとき、
+同一の PhysicalAsset を指しているか否か、あるいは有効な航跡か否かを正しく判定することができるものとしている。
+同一性の判定は[isSame](\ref TrackBase::isSame(const TrackBase&) const) 関数で、
+有効性の判定は[is_none](\ref TrackBase::is_none() const) 関数で行う。
+
+
+# 座標変換 {#section_simulation_Track_transformation}
+
+## 個別の状態量の座標変換 {#section_simulation_Track_state_transformation}
+
+Track3D, Track2D ともに、位置や速度等の座標は[Coordinate](\ref section_simulation_Coordinate_Coordinate)として保持している。
+そのため、例えば以下のように、[operator()](\ref Coordinate::operator()(const std::shared_ptr<CoordinateReferenceSystem>&) const)によって
+特定の座標系での値に容易に変換することができる。
+
+```cpp
+std::shared_ptr<CoordinateReferenceSystem> crs=manager->getRootCRS(); // 変換先の座標系
+Track3D t; // 航跡
+Eigen::Vector3d p=t.pos(crs); // crsにおける座標ベクトルとして取得
+```
+```python
+crs=self.manager.getRootCRS() # 変換先の座標系
+t=Track3D() # 航跡
+p=t.pos(crs) # crsにおける座標ベクトルをnp.ndarrayとして取得
+```
+
+## Trackオブジェクト全体の座標変換 {#section_simulation_Track_entire_transformation}
+
+Track3D, Track2D ともに、[transformTo(crs)](\ref Track3D::transformTo)や[setCRS(crs,bool)](\ref Track3D::setCRS)を用いることで
+航跡オブジェクト全体を特定の座標系crsに座標変換することが可能である。
+
+```cpp
+std::shared_ptr<CoordinateReferenceSystem> crs=manager->getRootCRS(); // 変換先の座標系
+Track3D t; // 航跡
+Track3D t2=t.transformTo(crs); // crsにおける航跡として取得
+
+t.setCRS(crs,true); // crsにおけるTrackにin-placeで変換
+
+t.setCRS(crs,false); // 座標変換をせずに座標系をcrsにin-placeで変更
+```
+```python
+crs=self.manager.getRootCRS() # 変換先の座標系
+t=Track3D() # 航跡
+t2=t.transformTo(crs) # crsにおける航跡として取得
+
+t.setCRS(crs,True) # crsにおけるTrackにin-placeで変換
+
+t.setCRS(crs,False) # 座標変換をせずに座標系をcrsにin-placeで変更
+```
+
+*/
+    }
+}

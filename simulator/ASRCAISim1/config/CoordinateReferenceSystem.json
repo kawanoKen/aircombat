@@ -1,0 +1,135 @@
+{"Factory":{
+	"CoordinateReferenceSystem":{
+		"Flat_NED":{
+			"class":"PureFlatCRS",
+			"config":{
+				"axisOrder":"NED",
+				"ellipsoidalOrigin":[
+					35.65809922222222,
+					139.7413574722222,
+					0.0
+				]
+			}
+		},
+		"Flat_ENU":{
+			"class":"PureFlatCRS",
+			"config":{
+				"axisOrder":"ENU",
+				"ellipsoidalOrigin":[
+					35.65809922222222,
+					139.7413574722222,
+					0.0
+				]
+			}
+		},
+		"WGS84_geocentric": {
+			"class": "GeodeticCRS",
+			"config": {
+				"semiMajorAxis": 6378137.0,
+				"inverseFlattening": 298.257223563,
+				"projString": "EPSG:4978"
+			}
+		},
+		"WGS84_geographic": {
+			"class": "GeographicCRS",
+			"config": {
+				"semiMajorAxis": 6378137.0,
+				"inverseFlattening": 298.257223563,
+				"projString": "EPSG:4979"
+			}
+		},
+		"ITRF94_geocentric": {
+			"class": "GeodeticCRS",
+			"config": {
+				"semiMajorAxis": 6378137.0,
+				"inverseFlattening": 298.257222101,
+				"projString": "EPSG:4916"
+			}
+		},
+		"ITRF94_geographic": {
+			"class": "GeographicCRS",
+			"config": {
+				"semiMajorAxis": 6378137.0,
+				"inverseFlattening": 298.257222101,
+				"projString": "EPSG:7906"
+			}
+		},
+		"Topocentric_Japan_NED": {
+			"class": "TopocentricCRS",
+			"config":{
+				"axisOrder": "NED",
+				"ellipsoidalOrigin":[
+					35.65809922222222,
+					139.7413574722222,
+					0.0
+				]
+			}
+		},
+		"Topocentric_Japan_ENU": {
+			"class": "TopocentricCRS",
+			"config":{
+				"axisOrder": "ENU",
+				"ellipsoidalOrigin":[
+					35.65809922222222,
+					139.7413574722222,
+					0.0
+				]
+			}
+		},
+		"UTM_Zone53N_ENU": {
+			"class": "GenericUTMCRS",
+			"config":{
+				"axisOrder":"ENU",
+				"scaleFactor":0.9996,
+				"onSurface":true,
+				"zone":53,
+				"offset":[500000.0,0.0,0.0],
+				"projectionAsLocal":false,
+				"offsetAsLocal":false
+			}
+		},
+		"UTM_Zone53N_NED": {
+			"class": "GenericUTMCRS",
+			"config":{
+				"axisOrder":"NED",
+				"scaleFactor":0.9996,
+				"onSurface":true,
+				"zone":53,
+				"offset":[0.0,500000.0,0.0],
+				"projectionAsLocal":false,
+				"offsetAsLocal":false
+			}
+		},
+		"UTM_Japan_ENU_local": {
+			"class": "GenericUTMCRS",
+			"config":{
+				"axisOrder":"ENU",
+				"scaleFactor":0.9996,
+				"onSurface":true,
+				"origin":[
+					35.65809922222222,
+					139.7413574722222,
+					0.0
+				],
+				"projectionAsLocal":true,
+				"offsetAsLocal":true
+			}
+		},
+		"UTM_Japan_NED_local": {
+			"class": "GenericUTMCRS",
+			"config":{
+				"axisOrder":"NED",
+				"scaleFactor":0.9996,
+				"onSurface":true,
+				"origin":[
+					35.65809922222222,
+					139.7413574722222,
+					0.0
+				],
+				"projectionAsLocal":true,
+				"offsetAsLocal":true
+			}
+		}
+	}
+}
+}

@@ -1,0 +1,62 @@
+{"Factory":{
+    "Ruler":{
+        "BasicAACRuler01":{
+            "class":"BasicAACRuler01",
+            "config":{
+                "interval":{
+                    "unit":"time",
+                    "value":0.1
+                },
+                "maxTime":300,
+                "minTime":1000,
+                "dLine":25000,
+                "dOut":25000,
+                "hLim":20000,
+                "westSider":"Red",
+                "eastSider":"Blue",
+                "pDisq": -10,
+                "pBreak": 0.0,
+                "pHit": {
+                    "Default":1.0
+                },
+                "pCrash": {
+                    "Default":1.0
+                },
+                "pAlive": {
+                    "Default":0.0
+                },
+                "pAdv": 0.0,
+                "pOut": 0.01,
+                "applyDOutBeyondLine":true,
+                "pHitPerAircraft": true,
+                "pCrashPerAircraft": true,
+                "pAlivePerAircraft": true,
+                "enableAdditionalTime": true,
+                "terminalAtElimination": true,
+                "terminalAtBreak": false,
+                "considerFuelConsumption": false,
+                "fuelMargin": 0.0,
+                "distanceFromBase": {
+                    "Red":0.0,
+                    "Blue":0.0
+                },
+                "modelNamesToBeConsideredForBreak": {
+                    "Red":[],
+                    "Blue":[]
+                },
+                "modelNamesToBeExcludedForBreak": {
+                    "Red":[],
+                    "Blue":[]
+                },
+                "modelNamesToBeConsideredForElimination": {
+                    "Red":["Any"],
+                    "Blue":["Any"]
+                },
+                "modelNamesToBeExcludedForElimination": {
+                    "Red":[],
+                    "Blue":[]
+                }
+            }
+        }
+    }
+}}

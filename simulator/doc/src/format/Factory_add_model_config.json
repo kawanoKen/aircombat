@@ -1,0 +1,17 @@
+/**
+ * Copyright (c) 2021-2025 Air Systems Research Center, Acquisition, Technology & Logistics Agency(ATLA)
+ * @file
+ * 
+ * @brief Factoryクラスに複数のモデルを追加する際のjson フォーマットに関する説明
+ */
+{
+    "<baseName": { // 第1階層はグループ名(base name)をキーとする。
+        "modelName": { // 第2階層はモデル名をキーとする。
+            "className": str, // クラス名。モデル名と同時に与えた場合はモデルのクラス指定を上書きする。キーは"class"としてもよい。
+            "modelName": str, // 他のモデルを継承する場合はモデル名を与える。キーは"model"としてもよい。
+            "modelConfig": dict // model configの中身。クラス・モデルごとに固有のフォーマットを持つ。キーは"config"としてもよい。
+        },
+        ...
+    },
+    ...
+}

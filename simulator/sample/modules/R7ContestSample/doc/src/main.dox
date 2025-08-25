@@ -1,0 +1,12 @@
+/**
+
+\mainpage R7ContestSample
+\anchor mainpage_R7ContestSample
+
+第4回空戦AIチャレンジの戦闘シナリオに合わせて基本的な強化学習を行うための行動判断モデルのサンプル
+
+
+
+[ドキュメントのトップに戻る(ASRCAISim1)](\ref mainpage_core)
+
+*/

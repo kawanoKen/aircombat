@@ -1,0 +1,381 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_Coordinate 座標系の取り扱いについて
+
+座標参照系(Coorinate Reference System: CRS)とは、測地学や天文学で用いられる、
+物理空間上(特に地球上)の位置関係を記述するための概念である。
+CRSの概念を実空間での測量等により実現した座標系をCoordinate Reference Frame、
+原点と座標軸の組み合わせを単にCoordinate Systemと呼び分けることもあるが、
+これらを区別せずとも実用上特段の支障はないため、
+本シミュレータにおいては必要がない限りこれらを区別せず単に座標系と呼称し、
+クラス名や変数名はCRSの語を用いるものとする。
+
+# 座標系の分類とクラス階層 {#section_simulation_Coordinate_hierarchy}
+
+CRSを表す基底クラスは CoordinateReferenceSystem であり、 Entity の派生クラスとして実装している。
+本来CRSはシミュレーション登場物とは言い難いものの、 Factory や SimulationManager による生成・管理の利便性のためにこのような実装としているものである。
+
+CoordinateReferenceSystem は以下のように分類される。
+
+```bash
+CoordinateReferenceSystem
+├ GeodeticCRS
+│├ GeographicCRS
+│└ EarthCenteredInertialCRS
+├ PureFlatCRS
+└ DerivedCRS
+　├ AffineCRS
+　├ TopocentricCRS
+　└ ProjectedCRS
+```
+
+## GeodeticCRS {#section_simulation_Coordinate_GeodeticCRS}
+
+GeodeticCRS クラスは地球を中心とした座標系を表す。本シミュレータではGeocentric (ECEF)、Geographic (測地座標系)、Earth Centered Inertial (ECI)の3種類に分けて扱う。
+ISO 19111のクラス階層に準じて、基底クラスとなる GeodeticCRS のインスタンスはECEF座標系を表すものとし、その派生クラスとして GeographicCRS クラスと EarthCenteredInertialCRS クラスを実装する。
+
+同種の GeodeticCRS であっても、そのインスタンス(Coordinate Reference Frameに相当)は一意ではないことに留意されたい。
+地球の中心や形状、自転軸の定義は様々な年代の様々な測量結果に基づく定義が存在しているためである。
+具体例としてはGPS衛星で用いられているWGS84や、国際標準として数年おきに定義されるITRFが挙げられる。
+
+ECEF座標系と測地座標系が地球に固定され地球とともに回転するのに対し、
+ECI座標系は原点を地球の中心に固定しながらも座標軸は星々に対し固定される。
+そのため、ECI座標系は測地学ではなく天文学で利用される。
+工学的には人工衛星のような宇宙機の運動を記述する際に用いられることが多い。
+ECI座標系の具体例としては、J2000.0を元期とするMEME2000 (Mean Equator Mean Equinox 2000)や、
+国際標準として定義されたICRF (International Celestial Reference Frame)が挙げられる。
+
+運動の基準としてECIとECEFのどちらを用いるのが適しているかについては用途によって異なる。
+ECIは実質的に慣性系とみなせるためコリオリの力等の慣性力を考慮しなくてよい一方で、
+いわゆる重力(gravity)は万有引力(gravitation)のみでなく自転による遠心力(centrifugal force)の
+影響も含んだものとして扱われるため、実測データに基づく重力場モデル(EGM等)を用いる場合には
+遠心力の影響を減算する必要が生じる。
+他方、ECEFは自転に起因するコリオリの力を考慮しなければならない一方で、EGM等の重力場モデルをそのまま使用できる。
+本シミュレータでは、地球に固定された座標系(ECEF)の方を基準座標系として扱う。
+
+### 制約 {#section_simulation_Coordinate_GeodeticCRS_limitation}
+
+本シミュレータの本体部分としては、以下の制約を有する。これらは必要に応じてPROJ等の外部ライブラリを用いたプラグインとして実装する想定である。
+
+- 楕円体形状、原点位置、座標軸の向きが異なる GeodeticCRS 間の座標変換は不可
+- GeographicCRS の緯度と経度はつねに緯度が先、単位はradianのみ
+- ECIの具象クラスは一例として楕円体中心を通る南北極方向を軸に等速で自転するもののみ
+
+## PureFlatCRS {#section_simulation_Coordinate_PureFlatCRS}
+
+PureFlatCRS クラスは、地球の曲率を無視して仮想的な平面とみなす座標系を表す。
+ISO 19111におけるEngineeringCRSに相当し、簡易モデルを用いた要素技術の検討などに用いられる。
+
+## DerivedCRS {#section_simulation_Coordinate_DerivedCRS}
+
+DerivedCRS クラスは、他の座標系を親として親座標系から何らかの座標変換を行うことで得られる座標系である。
+ISO 19111においてもDerivedCRSとして定義されている。本シミュレータでは以下の3種類のDerivedCRSを派生クラスとして定義する。
+
+DerivedCRS クラスのインスタンスを生成する際には、親となるCRSの情報を指定する必要がある。
+親となるCRSの情報は、 instanceConfig["base"]に [EntityManager::createOrGetEntityに渡せる形式](\ref section_simulation_entity_creation_format)で指定する。必ずしも既存のインスタンスを指す必要はなく、新たなインスタンスを生成してそれを親とすることも可能である。
+
+### AffineCRS {#section_simulation_Coordinate_AffineCRS}
+
+AffineCRS クラスは、親CRS上のある点が原点となるように平行移動し、
+さらに座標軸を回転させることで得られる座標系を表す。
+
+本シミュレータの実装においては、親CRSに固定されたものに限らず、原点の平行移動の速度と座標軸回転の角速度の情報を持つものとする。
+なお、軸の拡大・縮小は伴わないものとする。
+
+AffineCRS の移動と回転を許容することにより、物体に固定された座標系は AffineCRS として表現できる。本シミュレータでは AffineCRS の諸元を、物体の運動状態を表すデータ型[MotionState](\ref page_simulation_MotionState)を用いて表現する。
+また、逆に[MotionState](\ref page_simulation_MotionState)をそれに相当する AffineCRS とみなして様々な座標変換を行うメンバ関数を [MotionState](\ref page_simulation_MotionState) クラスに実装している( MotionState::absPtoB 等)。
+
+ユーザは必ずしも AffineCRS インスタンスを明示的に生成する必要はなく、基本的には PhysicalAsset が持つ MotionState の座標変換関数を呼ぶことで事足りることが多い。
+なお、 MotionState の情報は PhysicalAsset の [observables](\ref PhysicalAsset::observables)としても出力される。
+
+### TopocentricCRS {#section_simulation_Coordinate_TopocentricCRS}
+
+TopocentricCRS クラスは局所水平座標系を表す。正確には、地球楕円体面の法線方向を一つの座標軸として持つ直交座標系である。
+原点の位置は地表面(楕円体表面)とする場合と、特定の高度に置く場合がある。
+
+TopocentricCRS の用途を考えると原点は時間とともに移動させたいことが多く、また原点位置と座標軸を指定すれば一意に定まるため、
+本シミュレータでは必ずしも明示的に TopocentricCRS インスタンスを生成せずとも、任意の CoordinateReferenceSystem インスタンスのメンバ関数
+[transformToTopocentricCRS](\ref CoordinateReferenceSystem::transformToTopocentricCRS)と[transformFromTopocentricCRS](\ref CoordinateReferenceSystem::transformFromTopocentricCRS)を
+使用することで座標変換を行えるようになっている。
+
+また、[MotionState](\ref page_simulation_MotionState)クラスにも
+TopocentricCRS との座標変換を TopocentricCRS インスタンスを生成せずに行うメンバ関数を実装している( MotionState::absPtoH 等。)
+
+### ProjectedCRS {#section_simulation_Coordinate_ProjectedCRS}
+
+ProjectedCRS クラスは、親となる GeodeticCRS の緯度経度を平面上の2次元座標に
+変換するものであり、高度はそのまま据え置きとなる。
+例えばメルカトル図法により投影された座標系等が該当する。
+
+ProjectedCRS は投影図法によって座標軸の直交性や縮尺が場所によって異なるため、他の
+CRSに比べて「絶対位置」以外の座標変換の取り扱いが難しくなる。
+
+本シミュレータの本体部分としては ProjectedCRS の一例として、
+任意の経度を原点とするユニバーサル横メルカトル図法のみを実装している。
+他の図法が必要な場合は、PROJ等の外部ライブラリを用いたプラグインとして実装する想定である。
+
+# 座標軸の順序について {#section_simulation_Coordinate_axis_order}
+
+座標系を定めたとしても、3次元ベクトル値として座標値を表現する際には
+どの向きに基底(座標軸)を取るかの自由度がある。
+
+本シミュレータにおける座標軸の順序は以下のとおりとする。
+
+## GeodeticCRS の場合 {#section_simulation_Coordinate_axis_geodetic}
+
+ECEF座標系の場合、楕円体中心を原点として、
+赤道面上の経度0度方向を+x軸、東経90度方向を+y軸、北極方向を+z軸とする。
+
+測地座標系の場合、緯度、経度、高度の順とする。
+ただし、緯度は測地系緯度(楕円体表面における法線と赤道面のなす角度)とする。
+
+ECI座標系の場合、ある基準時刻(元期)におけるECEF座標系の座標軸を自身の座標軸として用いる。
+
+## 物体固定座標系の直交座標軸の場合 {#section_simulation_Coordinate_axis_body_cartesian}
+
+以下の3種類の軸を表す文字を一つずつ含む3文字の文字列で表現するものとする。
+(例："FSD"…前が+x、右が+y、下が+z)
+
+1. 前後方向
+    - 'F' FWD 前方が正の軸
+    - 'A' AFT 後方が正の軸
+2. 左右方向
+    - 'S' STBD(RIGHT) 右方が正の軸
+    - 'R' RIGHT 右方が正の軸
+    - 'P' PORT(LEFT) 左方が正の軸
+    - 'L' LEFT 左方が正の軸
+3. 上下方向
+    - 'U' UP 上方が正の軸
+    - 'D' DOWN 下方が正の軸
+
+## 局所水平座標系の直交座標軸の場合 {#section_simulation_Coordinate_axis_topocentric_cartesian}
+
+以下の3種類の軸を表す文字を一つずつ含む3文字の文字列で表現するものとする。
+(例："NED"…北が+x、東が+y、下が+z)
+
+1. 南北方向
+    - 'N' North 北が正の軸
+    - 'S' South 南が正の軸
+2. 東西方向
+    - 'E' East 東が正の軸
+    - 'W' West 西が正の軸
+3. 上下方向
+    - 'U' UP 鉛直上方が正の軸
+    - 'D' DOWN 鉛直下方が正の軸
+
+## 球座標系の場合 {#section_simulation_Coordinate_axis_spherical}
+
+以下の3種類の軸を表す文字を一つずつ含む3文字の文字列で表現するものとする。
+(例："AER"…経度方向、緯度方向、距離の順)
+
+ただし、経度方向の符号は対応する直交座標系の+x-y平面上で+x軸方向を0として+y軸側を正とし、
+緯度方向の符号は対応する直交座標系のx-y平面上を0として+z軸側を正とする。
+
+1. 経度方向
+    - 'A' Azimuth
+2. 緯度方向
+    - 'E' Elevation
+3. 距離(以下のいずれか。意味は同じ)
+    - 'D' Distance
+    - 'R' Range
+
+# 座標値の種類 {#section_simulation_Coordinate_CoordinateType}
+
+本シミュレータにおいて、座標値の種類は以下の5種類を定義しており、 CoordinateType 列挙体として表現する。
+互いに固定されていない座標系の間での座標変換や、正規直交基底を持たない座標系との間の座標変換等は、
+この座標値の種類によって、異なる変換式が用いられる。
+
+値              | 意味
+----------------|---------------
+POSITION_ABS    | 絶対位置。原点からの変位を表す。
+POSITION_REL    | 相対位置。ある点から別の点への相対的な変位を表す。
+DIRECTION       | 方向。ある点から別の点への方向を表す。
+VELOCITY        | 並進速度。
+ANGULAR_VELOCITY| 角速度。
+
+例えば、二つの座標系の原点が異なる場所にある場合、
+POSITION_ABSの変換では原点位置の差分を加算する必要があるが
+POSITION_RELやDIRECTIONの変換では不要である。
+
+また、二つの座標系の原点が互いに移動している場合、
+VELOCITYの変換ではその移動速度を加算する必要がある。
+
+また、二つの座標系が互いに回転している場合、
+ANGULAR_VELOCITYの変換ではその回転角速度を加算する必要があり、
+VELOCITYの変換では一方から見た他方の原点の見かけの移動速度を加算する必要がある。
+
+# CoordinateReferenceSystem オブジェクトを用いた座標変換 {#section_simulation_Coordinate_CRS_transformation}
+
+CoordinateReferenceSystem 及びその派生クラスでは、様々な引数をとる様々な座標変換関数が実装されている。
+
+ただし、 CoordinateReferenceSystem クラスのメンバ関数以外にも、 
+[Coordinate](\ref section_simulation_Coordinate_Coordinate_transformation)、
+[MotionState](\ref section_simulation_MotionState_transformation)、
+[Track](\ref section_simulation_Track_transformation)といったデータクラスにも座標変換用の関数が提供されており、
+多くの場合はこれらのデータクラスの関数を使用する方が簡便であるため、
+CoordinateReferenceSystem の座標変換関数に関する個別の詳細説明は割愛する。
+
+# 座標値を表すデータ型「 Coordinate 」 {#section_simulation_Coordinate_Coordinate}
+
+異なる座標系の間で座標変換を適切に行うためには、座標値を表すベクトル一つでは情報が不足する。
+その座標値が観測された位置と時刻、及び[座標値の種類](\ref section_simulation_Coordinate_CoordinateType)によって、変換式が異なる。
+
+本シミュレータでは、座標変換に必要な情報を保持したデータ型として Coordinate クラスを実装しており、絶対位置、相対位置、方向、並進速度、角速度の5種類の座標値に関する座標変換機能を提供している。
+
+## Coordinate クラスのjson表現 {#section_simulation_Coordinate_Coordinate_json}
+
+key         |value                                                              |load時の省略可否
+------------|-------------------------------------------------------------------|----------------
+value       |座標値(3次元ベクトル)                                              |不可
+location    |観測された点の座標値(絶対位置)                                     |不可
+crs         |[CRSのjson表現](\ref section_simulation_Entity_as_reference_json)  |不可
+time        |時刻 (Time)                                                        |不可
+type        |座標の種類(CoordinateType を表す文字列)                            |不可
+
+## Coordinate オブジェクトの座標変換 {#section_simulation_Coordinate_Coordinate_transformation}
+
+Coordinate オブジェクトは以下のように、
+[operator(crs)](\ref Coordinate::operator()(const std::shared_ptr<CoordinateReferenceSystem>&) const)や
+[transformTo(crs)](\ref Coordinate::transformTo)によって
+特定の座標系での値に容易に変換することができる。
+
+```cpp
+std::shared_ptr<CoordinateReferenceSystem> crs=manager->getRootCRS(); // 変換先の座標系
+Coordinate c; // 何らかの座標
+Eigen::Vector3d p=c(crs); // crsにおける座標ベクトルとして取得
+Eigen::Vector3d p=c(); // 引数を省略した場合はcが元々保持していた座標系における座標ベクトルとして取得
+
+Coordinate c2=c.transformTo(crs); // crsにおける新たな Coordinate オブジェクトとして取得
+```
+```python
+crs=self.manager.getRootCRS() # 変換先の座標系
+t=Coordinate() # 何らかの座標
+p=c(crs) # crsにおける座標ベクトルをnp.ndarrayとして取得
+p=c() # 引数を省略した場合はcが元々保持していた座標系における座標ベクトルとして取得
+
+c2=c.transformTo(crs) # crsにおける新たな Coordinate オブジェクトとして取得
+```
+
+# CRSモデルのプリセット {#section_simulation_Coordinate_preset_models}
+
+ASRCAISim1/config/CoordinateReferenceSystem.json に
+幾つかの基本的なCRSモデルが以下のとおり定義済である。
+
+モデル名 | 概要
+---------|------
+Flat_NED | North-East-Downの座標軸を持った PureFlatCRS 。原点の地理座標を日本経緯度原点としている。
+Flat_ENU | East-North-Upの座標軸を持った PureFlatCRS 。原点はFlat_NEDと同じ。
+WGS84_geocentric | WGS84楕円体を用いたECEF座標系
+WGS84_geographic | WGS84楕円体を用いた地理座標系
+ITRF94_geocentric | ITRF94楕円体を用いたECEF座標系
+ITRF94_geographic | ITRF94楕円体を用いた地理座標系
+Topocentric_Japan_NED | 日本経緯度原点における局所水平座標系(North-East-Down)
+Topocentric_Japan_ENU | 日本経緯度原点における局所水平座標系(East-North-Up)
+UTM_Zone53N_ENU | ユニバーサル横メルカトル図法ゾーン53Nで座標軸をNorth-East-Downにとったもの
+UTM_Zone53N_NED | ユニバーサル横メルカトル図法ゾーン53Nで座標軸をEast-North-Upにとったもの
+UTM_Japan_ENU_local | 日本経緯度原点を基準経度としたユニバーサル横メルカトル図法で原点を日本経緯度原点にとったもの(East-North-Up)
+UTM_Japan_NED_local | 日本経緯度原点を基準経度としたユニバーサル横メルカトル図法で原点を日本経緯度原点にとったもの(North-East-Down)
+
+\include ASRCAISim1/config/CoordinateReferenceSystem.json
+
+## SimulationManager固有のCRSインスタンスのプリセット {#section_simulation_Coordinate_preset_instances}
+
+SimulationManager に与えるコンフィグの"/Manager/crs/preset"に、
+起動時に生成するCRSインスタンスの一覧を指定することができる。
+
+entityFullNameにはキー名、isEpisodicにはfalse、baseNameには"CoordinateReferenceSystem"が自動的に設定されるため、これらを記述する必要はない。
+
+```json
+{
+    "Manager":{
+        "crs": {
+            "preset": {
+                "geoc": {
+                    "modelName":"WGS84_geocentric"
+                },
+                "geog": {
+                    "modelName":"WGS84_geographic",
+                    "instanceConfig": {
+                        "ecef": {
+                            "entityFullName":"geoc"
+                        }
+                    }
+                },
+                "local":{
+                    "modelName":"UTM_Japan_NED_local",
+                    "instanceConfig":{
+                        "base":{"entityFullName":"geog"},
+                        "origin":[
+                            35.65809922222222,
+                            139.7413574722222,
+                            0.0
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+# シミュレーション中に必ず定義される座標系 {#section_simulation_Coordinate_in_simulation}
+
+
+## SimulationManager::rootCRS {#section_simulation_Coordinate_in_simulation_rootCRS}
+
+シミュレーション中の基準座標系は SimulationManager::rootCRS として SimulationManager クラスが保持する。
+これは SimulationManager::getRootCRS() によって取得可能であり、[SimulationManagerのAccessor](\ref section_simulation_accessor_SimulationManager) からも同名のメンバ関数により取得可能である。
+
+rootCRS は運動方程式の計算等にも用いられるため、直交座標軸を持つ PureFlatCRS 、 ECEF 、 又は ECI のいずれかとする。
+
+rootCRSの設定は SimulationManager に与えるコンフィグの"/Manager/crs/root"に記述する。省略時は NEDの座標軸を持つ PureFlatCRS が自動生成される。
+
+- (例1) Factory モデルを指定する場合
+
+```json
+{
+    "Manager":{
+        "crs": {
+            "root": {
+                "isEpisodic": false,
+                "baseName": "CoordinateReferenceSystem",
+                "entityFullName": "rootCRS",
+                "model":"WGS84_geocentric"
+            }
+        }
+    }
+}
+```
+
+- (例2) Factory モデルを指定する場合
+
+```json
+{
+    "Manager":{
+        "crs": {
+            "root": {
+                "isEpisodic": false,
+                "baseName": "CoordinateReferenceSystem",
+                "entityFullName": "rootCRS",
+                "model":"WGS84_geocentric"
+            }
+        }
+    }
+}
+```
+
+## Ruler::localCRS {#section_simulation_Coordinate_in_simulation_Ruler_localCRS}
+
+シミュレーションのルール(戦域の形状等)を表現するために、 Ruler も独自のlocal CRSを Ruler::localCRS として保持する。
+これは Ruler::getLocalCRS() によって取得可能であり、[RulerのAccessor](\ref section_simulation_accessor_Ruler) からも同名のメンバ関数により取得可能である。
+
+## Agent::localCRS {#section_simulation_Coordinate_in_simulation_Agent_localCRS}
+
+行動判断を計算するために、 Agent も独自のlocalCRSを持つことができる。
+省略時は、自身が従う Ruler の localCRS を使用する。
+
+*/
+    }
+}

@@ -1,0 +1,63 @@
+{"Factory":{
+    "Agent":{
+        "R7ContestBlueEscortedAgent":{
+            "class":"CapsuleCoursePatrolAgent",
+            "config":{
+                "interval":{
+                    "unit":"time",
+                    "step":100000000.0,
+                    "perceive":1.0,
+                    "control":1.0,
+                    "behave":1.0
+                },
+                "dontExpose":true,
+                "p1":[60000.0,100000.0,-10000.0],
+                "p2":[-60000.0,100000.0,-10000.0],
+                "velocity":250.0,
+                "radius":5000.0,
+                "altitudeKeeper":{
+                    "pGain":-3e-1,
+                    "dGain":-1e-1,
+                    "minPitch":-10.0,
+                    "maxPitch":10.0
+                },
+                "deltaAZLimit": 45.0,
+                "minPitchForNormal":-10.0,
+                "maxPitchForNormal":10.0,
+                "minPitchForEvasion":-45.0,
+                "maxPitchForEvasion":10.0,
+                "minAltForEvasion":4000.0
+            }
+
+        },
+        "R7ContestRedEscortedAgent":{
+            "class":"CapsuleCoursePatrolAgent",
+            "config":{
+                "interval":{
+                    "unit":"time",
+                    "step":100000000.0,
+                    "perceive":1.0,
+                    "control":1.0,
+                    "behave":1.0
+                },
+                "dontExpose":true,
+                "p1":[-60000.0,-100000.0,-10000.0],
+                "p2":[60000.0,-100000.0,-10000.0],
+                "velocity":250.0,
+                "radius":5000.0,
+                "altitudeKeeper":{
+                    "pGain":-3e-1,
+                    "dGain":-1e-1,
+                    "minPitch":-10.0,
+                    "maxPitch":10.0
+                },
+                "deltaAZLimit": 45.0,
+                "minPitchForNormal":-10.0,
+                "maxPitchForNormal":10.0,
+                "minPitchForEvasion":-45.0,
+                "maxPitchForEvasion":10.0,
+                "minAltForEvasion":4000.0
+            }
+        }
+    }
+}}

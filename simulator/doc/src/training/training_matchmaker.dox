@@ -1,0 +1,13 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_training_MatchMaker 複数の行動判断モデルを用いた対戦管理機能(MatchMaker)
+
+本シミュレータのcore pluginである[MatchMaker](\ref mainpage_MatchMaker)は、
+複数の行動判断モデルを用いて Self-Play 等の対戦管理を行うための機能を提供している。
+
+
+*/
+    }
+}

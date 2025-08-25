@@ -1,0 +1,14 @@
+/**
+ * Copyright (c) 2021-2025 Air Systems Research Center, Acquisition, Technology & Logistics Agency(ATLA)
+ * @file
+ * 
+ * @brief Epochのjson フォーマットに関する説明
+ */
+{
+    "timeSystem": "TT",
+    "datetime": "2000-01-01T12-00-00", // ISO8601相当のタイムゾーン無し版(YYYYMMDDThhmmss.SSS又はYYYY-MM-DDThh:mm:ss.SSS)
+    "delta_tt_tai": 32.184, //optional
+    "delta_tt_ut1": 67.6439, //optional
+    "delta_ut1_utc": 0.0, //optional
+    "delta_tai_gpu": 19.0 //optional
+}

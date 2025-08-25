@@ -1,0 +1,7 @@
+include sample/scripts/R7Contest/MinimumEvaluation/MANIFEST.in.fragment
+recursive-include sample/scripts/R7Contest/MinimumEvaluation *.py
+recursive-include sample/scripts/R7Contest/MinimumEvaluation *.json
+recursive-include sample/scripts/R7Contest/MinimumEvaluation *.yaml
+recursive-include sample/scripts/R7Contest/MinimumEvaluation *.dat
+recursive-include sample/scripts/R7Contest/MinimumEvaluation *.pth
+recursive-exclude sample/scripts/R7Contest/MinimumEvaluation *.pyc

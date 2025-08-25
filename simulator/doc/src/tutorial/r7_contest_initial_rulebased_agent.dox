@@ -1,0 +1,282 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_r7_contest_initial_rulebased_agent ルールベースの初期行動判断モデル
+
+本シミュレータは簡易なルールベースによる初期行動判断モデルを
+[BasicAirToAirCombatModels01](\ref mainpage_BasicAirToAirCombatModels01)プラグインに
+[BasicAACRuleBasedAgent01](\ref BasicAirToAirCombatModels01::BasicAACRuleBasedAgent01)
+クラスとして提供している。本項ではその概要を示す。
+
+なお、このルールベースモデルは第4回空戦AIチャレンジのシナリオに沿ったものではなく、
+護衛対象機の護衛や撃墜を一切考慮せずに単純な空対空戦闘を行うだけのごく基本的なものであることに留意されたい。
+
+
+# 航跡に対する付帯情報 {#r7_contest_initial_rulebased_agent_trackinfo}
+
+初期行動判断モデルでは、自編隊センサから得ていた航跡情報をそのまま用いるのではなく、
+以下の情報を付帯情報として付与して行動判断を行う。
+
+1. センサが失探した瞬間に何もできなくならないように、失探後も更に\f$t_{memory}\f$秒間
+メモリトラックによって航跡を保持する。
+
+2. 以下の２種類の射程を計算する。彼我ともに同じ性能と仮定し、彼我ともに直ちに水平飛行に
+    移行して等速直線運動を行った場合の射程である。
+
+    - \f$R_{head}\f$ ･･･目標が直ちに自機を正面に向けて飛んだ場合の最大射程。
+    - \f$R_{tail}\f$ ･･･目標が直ちに自機に背を向けて飛んだ場合の最大射程。
+
+    @image html "missile_range_concept.png" "各射程の概念図"
+
+3. 目標に対する各機のセンシング状況を以下の３種類に分類する。
+
+    - OUTSIDE･･･基準探知距離、基準探知角範囲の外に存在する場合。
+    - INSIDE･･･基準探知距離から\f$L_{limit}\f$[m]以上内側かつ
+        覆域端から\f$\theta_{limit}\f$[deg]以上内側に存在する場合。
+        設定パラメータの値によっては、追加で自身が回避中でも離脱中でもないこと、という条件も付加できる。
+    - LIMIT･･･OUTSIDE と INSIDE の中間に存在する場合又は自身の状態によって INSIDE ではないとして扱われた場合。
+
+    @image html "sensing_state.png" "センシング状況の分類"
+
+4. 自編隊のどの機体によって探知された航跡なのかを識別するため、航跡供給元の機体名の情報を保持する。
+
+航跡の付帯情報に関する設定パラメータは下表の通りである。
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+tMaxMemory|独自メモリトラックの秒数。|\f$t_{memory}\f$|10|s
+sensorInCoverageLimit|センシング状況を INSIDE と判定するための角度。覆域端からどれだけ内側かという形式で指定する。|\f$L_{limit}\f$|10,000|m
+sensorInCoverageLimit|センシング状況を INSIDE と判定するための角度。覆域端からどれだけ内側かという形式で指定する。|\f$\theta_{limit}\f$|5|deg
+considerStateForTrackingCondition|センシング状況が INSIDE と判定される領域で、自身が回避中又は離脱中である場合にはセンシング状況を LIMIT とするかどうかのフラグ。|-|true|-
+
+また、これらの付帯情報を付加した航跡を json 化する際には[Track3Dの情報](#section_simulation_Track_Track3D_json)に加えて下表の値が追加される。
+
+key|本文中の記号|型|概要
+---|------------|--|----
+idx|-|int|対応する元の航跡のリストインデックス
+distance|-|float|自機との距離
+myRHead|\f$R_{head}\f$|float|自機からこの航跡へ射撃する際の\f$R_{head}\f$
+myRTail|\f$R_{tail}\f$|float|自機からこの航跡へ射撃する際の\f$R_{tail}\f$
+hisRHead|\f$R_{head}\f$|float|この目標から自機へ射撃する際の\f$R_{head}\f$
+hisRTail|\f$R_{tail}\f$|float|この目標から自機へ射撃する際の\f$R_{tail}\f$
+inOurSensor|-|str|自編隊によるセンシング状況。
+inMySensor|-|str|自機によるセンシング状況。
+numTracker|-|int|この目標を探知できている機体の数
+numTrackerLimit|-|int|この目標を LIMIT の状態で探知している機体の数
+trackers|-|list[str]|この目標を探知できている機体名のリスト
+limitTrackers|-|list[str]|この目標を LIMIT の状態で探知している機体の数
+nonLimitTrackers|-|list[str]|この目標を INSIDE の状態で探知している機体の数
+state|-|str|この目標の更新状況。少なくとも 1 機が探知中でその情報で更新中なら"TRACK"、メモリトラック中なら"MEMORT"、メモリトラック上限時間に達したら"LOST"
+memoryStartTime|-|float|メモリトラックを開始した時刻
+
+# 目標選択 {#r7_contest_initial_rulebased_agent_target_selection}
+
+初期行動判断モデルモデルは最低限の味方との連携を実現するために、
+行動の対象を主目標と副目標に分けて考える。
+主目標は接近や射撃等の対象であり、各機１機のみを選ぶ。
+副目標はなるべく探知できるように心がける対象であり、
+味方の主目標と、誘導弾が飛翔中の目標を指すものとする。
+主目標の選択要領は以下のとおりとする。
+
+1. 主目標の候補は、自編隊センサで得ている全航跡と、メモリトラック中の副目標とする。
+2. 対象が自陣に十分近いか、敵陣側扇形範囲内に対象を捉えている味方がいない、のいずれかを満たす
+    候補が存在した場合、その候補を突破阻止対象として扱い、主目標が未割当の味方のうちその候補に最も近い味方の主目標として割り当てる。
+3. 突破阻止対象を割り当てられなかった機体はそれぞれ自身から距離が最も近い候補を主目標として選択する。
+
+    @image html "leaker_check.png" "突破阻止対象の判定(a…距離による判定、b…角度による判定)"
+
+設定パラメータは下表のとおり。
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+dPrioritizedAimLeaker|相手を Leaker と判定する、自陣からの距離。Ruler のdLineに対する比で表す。|-|-1|-
+thetaPrioritizedAimLeaker|相手を Leaker と判定する、扇形範囲の中心角。|-|180|deg
+
+# 行動の種類 {#r7_contest_initial_rulebased_agent_state}
+
+初期行動判断モデルは、下表の 5 種類の state 間を遷移しながら行動を決定していく。
+これらの state に離散的なイベントである射撃を加えた 6 種類の状態の遷移が本基準モデルの基本的な振る舞いであり、
+その概要を図示すると下図のようになる。
+
+変数 state の値|本書での表現|概要
+---------------|------------|----
+ADVANCE|前進|敵陣側へまっすぐ前進する。副目標を捉えるために少し方位をずらすこともある。
+APPROACH_TARGET|接近|主目標の存在する方位に向かって進む。副目標を捉えるために少し方位をずらすこともある。
+KEEP_SENSING|横行|主目標を覆域端に捉えるように飛行する。副目標を捉えるために少し方位をずらすこともある。
+RTB|後退|燃料が足りなくなりそうな場合に自陣側へ後退しようと試みる。
+WITHDRAW|離脱|トリガーとなった彼機から離れるように離脱する。
+EVADE|回避|検知した誘導弾に背を向けてダイブし、回避を試みる。
+
+@image html "state_transition.png" "基本となる状態遷移" width=100%
+
+# (s1)通常時の行動 {#r7_contest_initial_rulebased_agent_normal_state}
+
+回避や離脱を行っていない「(s1)通常時」の行動については、以下のフローに従って選択するものとする。
+1. 「後退」でないときに余剰燃料が一定値未満になった場合、必ず「後退」とする。
+2. 「後退」しているときに余剰燃料が一定値以上になった場合、3.～7.に従って「後退」以外の行動を選択するものとする。
+3. 見えている彼機が存在しない、自身が彼防衛ラインに近い、自身から見て彼防衛ライン側扇形範囲内に彼機が存在しない、のいずれかを満たす場合、必ず「前進」とする。
+4. 自身の主目標が突破阻止対象であるとき、必ず「接近」とする。
+5. 自身の主目標を味方が余裕をもって捉えているとき、確率で「前進」「接近」「横行」から選択する。
+6. 自身の主目標を味方が余裕をもって捉えてはおらず、自身でも余裕をもって捉えていないとき、必ず「接近」とする。
+7. 自身の主目標を味方が余裕をもって捉えてはおらず、自身は余裕をもって捉えているとき、確率で「接近」「横行」から選択する。
+8. 行動選択後\f$t_{reconsider}\f$経過、主目標又は探知状況の変化、後退、離脱又は回避のいずれかが発生した場合は再選択を行う。
+
+上記のうち3.～7.のフローを図示すると下図のようになり、設定可能なパラメータは下表のとおりである。
+
+@image html "state_transition_normal.png" "通常時の行動選択フロー" width=100%
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+reconsiderationCycle|通常時の行動判断を再実施するまでの時間|\f$t_{reconsider}\f$|10|s
+RTBEnterMargin|「後退」を開始する余剰燃料量|\f$L_{margin1}\f$|0|m
+RTBExitMargin|「後退」を終了する余剰燃料量|\f$L_{margin2}\f$|0|m
+thetaKeepSensing|横行時に目標を収めようとする、覆域端からの角度。|\f$\theta_{keep}\f$|10|deg
+dPrioritizedAdvance|前進を優先する、敵陣からの距離。Ruler の dLine に対する比で表す。|\f$r_{adv}\f$|-1|-
+thetaPrioritizedAdvance|前進を優先する、扇形範囲の中心角。|\f$\theta_{adv}\f$|180|deg
+pAdvanceAlly|条件3.において「前進」を選ぶ重み。|\f$p_{Ally,Adv}\f$|0|-
+pApproachAlly|条件3.において「接近」を選ぶ重み。|\f$p_{Ally,App}\f$|60|-
+pKeepSensingAlly|条件3.において「横行」を選ぶ重み。|\f$p_{Ally,Keep}\f$|40|-
+pApproachMySelf|条件5.において「接近」を選ぶ重み。|\f$p_{Self,Adv}\f$|60|-
+pKeepSensingMySelf|条件5.において「横行」を選ぶ重み。|\f$p_{Self,Keep}\f$|40|-
+
+# (a1)射撃 {#r7_contest_initial_rulebased_agent_shoot}
+
+初期行動判断モデルは、自機が射撃可能な状態(弾切れでなく、人間介入モデルに射撃出力を処理する余力があること)
+であるときに1.～3.の射撃条件を全て満たす航跡がある場合に、射撃を試みるものとする。
+
+1. その航跡との距離を、\f$R_{tail}\f$を0、\f$R_{Head}\f$を1として線形変換した値\f$r\f$が\f$r < k_{shoot}\f$以下であること。
+2. その航跡を自編隊のうち 1 機以上が余裕をもって捉えていること。
+3. 自身がその航跡に対して射撃した誘導弾のうち飛翔中のものが\f$N_{simul}\f$発以下であること。
+
+射撃条件を満たした航跡が複数存在した場合は、条件1.における\f$r\f$が最も小さい航跡を射撃対象として選択する。
+各射撃条件のイメージは下図のとおりであり、設定パラメータは下表のとおりである。
+
+@image html "shoot_condition.png" "各射撃条件のイメージ" width=100%
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+kShoot|その航跡が射程内であると判定する閾値|\f$k_{shoot}\f$|0.25|-
+nMslSimul|1航跡に対する同時射撃数の上限|\f$N_{simul}\f$|1|-
+
+# (s2)離脱 {#r7_contest_initial_rulebased_agent_withdrawal}
+
+初期行動判断モデルは、自身が保持している全ての航跡を対象とし、彼側の\f$R_{tail}\f$を0、
+\f$R_{Head}\f$を1として線形変換した値\f$r\f$が\f$r < k_{break}\f$以下となった航跡が一つでも存在した場合、
+その航跡に背を向けられる方位に向けて離脱を行うものとする。
+複数の航跡が条件を満たしていた場合は、それらの間隔が最も広く空いている方位に向けて離脱を行うものとする。
+離脱の終了は、離脱条件を満たす航跡が存在しない状態が\f$t_{withdraw}\f$秒継続したときとする。
+
+射撃条件のイメージは下図のとおりであり、設定パラメータは下表のとおりである。
+
+@image html "withdrawal_condition.png" "離脱条件のイメージ"
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+kBreak|その航跡からの射程内であると判定する閾値|\f$k_{shoot}\f$|0.2|-
+tWithdraw|離脱条件を満たさなくってから離脱を終了するまでの待機時間|\f$t_{withdraw}\f$|50|-
+
+# (s3)回避 {#r7_contest_initial_rulebased_agent_evasion}
+
+初期行動判断モデルは、自機の MWS が誘導弾を検知している場合、最優先で回避を試みるものとする。
+回避は検知した弾と反対の方位に降下角度\f$\theta_{evasion}\f$、下限高度\f$h_{evasion}\f$で全速力で降下することで行うものとし、
+複数の弾を検知している場合は検知リストの先頭にあるものを対象として回避する。
+
+設定パラメータは下表のとおり。
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+thetaEvasion|回避時の降下角度|\f$\theta_{evasion}\f$|45|deg
+hEvasion|回避時の下限高度|\f$h_{evasion}\f$|4,000|m
+
+# 針路の補正 {#r7_contest_initial_rulebased_agent_route_correction}
+
+初期行動判断モデルは、以上のロジックに従い行動を選択し、進行方向を計算するが、
+その他に以下の三つの要素を考慮して進行方向の補正を行うものとする。
+
+1. 副目標の追尾
+
+    本来の針路から\f$\theta_{extra}\f$以内の変更によって自身が捉えられる副目標が増える場合、捉えられる副目標
+    が最大となるように針路を補正するものとする。
+
+2. 高度維持
+
+    回避中でないときは一定高度を維持しようと試みるものとする。
+    通常時は\f$\pm \theta_{normal}\f$以内のピッチ角で高度を\f$h_{normal}\f$に、
+    離脱時は\f$\pm \theta_{withdraw}\f$以内のピッチ角で高度を\f$h_{withdraw}\f$に、
+    後退時は\f$\pm \theta_{RTB}\f$以内のピッチ角で高度を\f$h_{RTB}\f$に維持しようと試みるものとする。
+3. 場外の防止
+
+    南北方向の場外に出てしまうことを防ぐため、以下の三つの観点で補正を行うものとする。
+
+    - 南北方向の場外から内側に\f$d_{limit,dir}\f$の位置より外側にいるとき、
+        場外から内側に\f$d_{limit,ref}\f$に引いた判定ラインを超過した距離に応じた補正量で外側への進行を制限する。
+    - 北方向の場外から内側に\f$d_{limit,keep}\f$の位置より外側で横行機動を開始するときは、候補となる二つの
+        進行方向のうち、戦域中心に近づく方を選択するものとする。
+    - 南北方向の場外から内側に\f$d_{limit,turn}\f$の位置より外側にいるとき、目標針路への旋回は場外側に向かないような旋回軸で実施するものとする。
+
+各針路補正のイメージは下図に示すとおりであり、設定パラメータは下表のとおりである。
+
+@image html "route_correction.png" "各針路補正のイメージ" width=100%
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+thetaModForSensing|副目標を追加で捉えるための補正角度の上限|\f$\theta_{extra}\f$|10|deg
+thetaNormal|通常時の高度維持のピッチ角制限|\f$\theta_{normal}\f$|10|deg
+hNormal|通常時の高度維持の目標高度|\f$h_{normal}\f$|12,000|m
+thetaWithdraw|離脱時の高度維持のピッチ角制限|\f$\theta_{withdraw}\f$|15|deg
+hWithdraw|離脱時の高度維持の目標高度|\f$h_{withdraw}\f$|8,000|m
+RTBPitchLimit|後退時の高度維持のピッチ角制限|\f$\theta_{RTB}\f$|10|deg
+RTBAltitude|後退時の高度維持の目標高度|\f$h_{RTB}\f$|9,000|m
+dOutLimit|場外防止のために進行方向の直接補正量を算出する判定ラインの場外からの距離|\f$d_{limit,ref}\f$|7,500|m
+dOutLimitThreshold|場外防止のために進行方向の直接補正を開始する場外からの距離|\f$d_{limit,dir}\f$|15,000|m
+dOutLimitKeepSensing|場外防止のために横行機動の方向を制限する判定ラインの場外からの距離|\f$d_{limit,keepf}\f$|10,000|m
+dOutLimitTurnAxis|場外防止のために旋回軸を制限する判定ラインの場外からの距離|\f$d_{limit,turn}\f$|10,000|m
+dOutLimitStrength|場外防止のために進行方向を直接補正する際の補正の強さ|0.001|-
+
+# 目標進行方向及び目標速度の計算方法 {#r7_contest_initial_rulebased_agent_command_calculation}
+
+戦闘機モデルに対する制御出力は以下の要領で計算するものとする。
+
+なお、飛行制御モデルは[「fromDirAndVel」モード](#section_r7_contest_scenario_fighter_flight_control)
+を使用するものとする。
+
+## 方向指示 {#r7_contest_initial_rulebased_agent_command_direction}
+
+方向指示は、目標進行方向\f$\mbox{\boldmath$d_{dst}$}\f$を与える方式を採用するが、
+前項までの各行動に応じて水平方向成分\f$\mbox{\boldmath$d_{dst,h}$}\f$と
+ピッチ角\f$\theta_{d,v}\f$(下向き正)を独立に計算し、
+\f[
+\mbox{\boldmath$d_{dst}$} = \mbox{\boldmath$d_{dst,h}$} \mbox{cos}\theta_{d,v}+(0,0,\mbox{sin}\theta_{d,v})^T
+\f]
+とする。
+ただし、\f$\mbox{\boldmath$d_{dst,h}$}\f$が現在の針路から\f$\theta_{limit,cmd}\f$以上離れている場合、
+戦闘機への制御出力としては同じ方向に\f$\theta_{limit,cmd}\f$回転させた方位を
+\f$\mbox{\boldmath$d_{dst,h}$}\f$として用いるものとする。
+
+方向指示に関する設定パラメータは下表のとおりである。
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+cmdDeltaAzLimit|制御出力の方位変化制限|\f$\theta_{limit,cmd}\f$|45|deg
+
+## 速度指示 {#r7_contest_initial_rulebased_agent_command_velocity}
+
+速度指示は、通常時(後退時を除く)は\f$T_{nominal}\f$、回避中は Max AB(= 1.0)としてスロットルで指定するものとする。
+後退時は目標速度\f$V_d=V_{RTB}\f$で指定するものとする。
+また、飛行速度が制限値\f$V_{min}\f$を下回った場合は\f$V_{recovery}\f$以上に回復するまでの間、
+通常時・回避中を問わず目標速度\f$V_d=V_{recovery,dst}\f$として指定するものとする。
+
+速度指示に関する設定パラメータは下表のとおりである。
+
+変数名|意味|本文中の記号|基準値|単位
+------|----|------------|------|----
+nominalThrottle|通常時のスロットル|\f$T_{nominal}\f$|1.0|-
+minimumV|速度回復を優先しはじめる速度|\f$V_{min}\f$|200|m/s
+minimumRecoveryV|速度回復を終了する速度|\f$V_{recovery}\f$|220|m/s
+minimumRecoveryDstV速度回復中の目標速度|\f$V_d=V_{recovery,dst}\f$|250|m/s
+RTBVelocity|後退時の目標速度|\f$V_d=V_{RTB}\f$|250|m/s
+
+*/
+    }
+}

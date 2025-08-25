@@ -1,0 +1,12 @@
+/**
+
+\mainpage py_template
+\anchor mainpage_py_template
+
+Pythonのみを用いて独自プラグインを作成するためのひな形
+
+
+
+[ドキュメントのトップに戻る(ASRCAISim1)](\ref mainpage_core)
+
+*/

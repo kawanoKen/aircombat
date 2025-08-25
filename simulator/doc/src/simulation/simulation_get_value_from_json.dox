@@ -1,0 +1,78 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_get_value_from_json jsonによる確率的パラメータ設定
+
+ランダム要素を含んだ登場物を単一のコンフィグファイルから動的に生成するための仕組みとして、
+
+include/Utility.h 及び src/Utility.cpp に 
+[getValueFromJsonX](\ref getValueFromJsonR) というユーティリティ関数を実装している。
+
+X には第二引数以降の与え方によって K,R,D のいずれか 0〜3 文字がこの順で入る。
+また、第一引数は常に値の生成元となる json である。
+
+このユーティリティ関数は、C++からもPythonからも利用可能である。
+
+# 関数名に付けるK,R,Dの意味
+
+- K
+
+    K は 生成元となるjsonがobject(dict)の場合に指定可能であり、
+    追加の文字列引数をキーとする値に対し再帰的に [getValueFromJsonR](\ref getValueFromJsonR) を呼び出す。
+
+    キーに対応した値が存在しなかった場合、関数名にDを付けてデフォルト値を与えていなければ例外を投げる。
+
+    キーにはjson pointerを与えてもよい。
+
+- R
+
+    R を付けた場合は乱数生成器を引数に追加し、それを用いてサンプリングが行われる。
+
+- D
+
+    D を付けた場合は、キーに対応した値が存在しなかった場合のデフォルト値を引数に追加する。
+
+# [getValueFromJsonR(j,gen)](\ref getValueFromJsonR) のサンプリング仕様
+
+- j が object(dict)の場合
+
+    "type"キーの値によって分岐する。省略時は"direct"とみなす。
+
+    - "direct"の場合
+        - j["type"]=="direct" かつ j が "value" キーを持っている場合
+
+            j["value"]を返す。
+        - それ以外の場合
+
+            objectの各キーの値を再帰的に [getValueFromJsonR](\ref getValueFromJsonR) を呼び出した結果に置き換えて返す。
+
+    - "normal"の場合
+
+        j["mean"]を平均、j["stddev"]を標準偏差とした正規分布からサンプリングして返す。
+        平均と標準偏差はスカラーに限らず、形が一致していれば任意のテンソルを与えることができる。
+
+    - "uniform"の場合
+
+        j["low"]を下限、j["high"]を上限とした一様分布でサンプリングして返す。
+
+        j["dtype"]を"float"か"int"で指定(省略時は"float")し、実数と整数のどちらでサンプリングするかを選択可能。
+
+        上限と下限はスカラーに限らず、形が一致していれば任意のテンソルを与えることができる。
+
+    - "choice"の場合
+
+        j["weights"]で与えた重みにしたがって、j["candidates"]で与えた選択肢から一つを選んで返す。
+
+- j が array(list)の場合
+
+    arrayの各要素を再帰的に [getValueFromJsonR](\ref getValueFromJsonR) を呼び出した結果に置き換えて返す。
+    
+- j がそれ以外(数値や文字列)の場合
+
+    j をそのまま返す。
+
+
+*/
+    }
+}

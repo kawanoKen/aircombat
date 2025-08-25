@@ -1,0 +1,63 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_Accessor Accessorクラスによるアクセス制限
+
+メンバ変数、メンバ関数について他のオブジェクトからのアクセスを制限したい場合が存在する。
+しかし、Python 側からの自由な継承を可能としている本シミュレータの実装では、
+Python 側からアクセスできる変数、関数は原則として public 指定とする必要がある。
+
+このような状況でアクセス制限をかける方法として、
+オブジェクト本体への参照を用いるのではなく自身に紐づいた
+Accessor クラスを介してアクセスを提供する機能を実装している。
+
+# SimulationManagerへのアクセス制限 {#section_simulation_accessor_SimulationManager}
+
+シミュレーション中の各登場物( Entity )は多くの場合、
+自身の処理を行うために SimulationManager の持つ情報や関数にアクセスする必要がある。
+しかし、Entity の種類によって適切なアクセス範囲は異なる。
+例えば時刻情報は基本的に全ての Entity に開示してよいし、
+場に存在する Asset の情報は Ruler に対してであれば全て開示すべきであるが
+Agent に対してはその Agent の「親」となる PhysicalAsset 以外の情報は開示すべきではない。
+
+このようなアクセス制限を実現するため、
+各 Entity には SimulationManager 本体への参照を保持させるのではなく、
+Entity の種類に応じた Accessor クラスを用意して Accessor 経由でアクセスさせることとしている。
+
+このAccessorクラスの基底クラスは EntityManagerAccessor クラスであり、
+SimulationManagerAccessorBase クラスを挟んで以下の3種類に派生している。
+
+- SimulationManagerAccessorForPhysicalAsset : Entity が PhysicalAsset 又は Controller の場合
+- SimulationManagerAccessorForAgent : Entity が Agent の場合
+- SimulationManagerAccessorForCallback : Entity が Callback の場合
+
+各Accessorからアクセス可能なメンバはそれぞれのpublicメンバを参照されたい。
+なお、C++側からアクセス可能なメンバはいずれもPython側にも同様のメンバが公開されている。
+
+# Entity へのアクセス制限 {#section_simulation_accessor_Entity}
+
+Entity へのアクセス制限を実現するAccessorの基底クラスは EntityAccessor である。
+
+EntityAccessor 及びこの派生クラスからアクセス可能なメンバはそれぞれのpublicメンバを参照されたい。
+なお、C++側からアクセス可能なメンバはいずれもPython側にも同様のメンバが公開されている。
+
+## Asset へのアクセス制限 {#section_simulation_accessor_Asset}
+
+Asset へのアクセス制限を実現するクラスは AssetAccessor である。
+
+### PhysicalAsset へのアクセス制限 {#section_simulation_accessor_PhysicalAsset}
+
+PhysicalAsset へのアクセス制限を実現するクラスは PhysicalAssetAccessor である。
+
+### Fighter へのアクセス制限 {#section_simulation_accessor_Fighter}
+
+Fighter へのアクセス制限を実現するクラスは FighterAccessor である。
+
+## Ruler へのアクセス制限 {#section_simulation_accessor_Ruler}
+
+Ruler へのアクセス制限を実現するクラスは RulerAccessor である。
+
+*/
+    }
+}

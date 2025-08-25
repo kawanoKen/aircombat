@@ -1,0 +1,15 @@
+[project]
+name = "simulator-dist"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch==2.7.0",
+    "tensorflow==2.15.0",
+    "pandas==2.1.4",
+    "scikit-learn==1.6.1",
+    "lightgbm==4.5.0",
+    "timeout-decorator==0.5.0",
+    "opencv-python-headless==4.11.0.86",
+]

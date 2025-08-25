@@ -1,0 +1,348 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_r7_contest_scenario 第4回空戦AIチャレンジの戦闘場面
+
+# 場面設定の概要 {#section_r7_contest_scenario_overview}
+
+今回の戦闘場面は、4機の戦闘機編隊が 1機の護衛対象機が撃墜されないように守りつつ
+相手の護衛対象機の撃墜を目指す、中距離空対空誘導弾を用いた目視外戦闘を簡易的に表現したものである。
+
+## シミュレーション及び行動判断の周期 {#section_r7_contest_scenario_tick}
+
+今回のシミュレーション時刻の最小単位(tick)は1.0sとする。
+行動判断モデルが gymnasium インターフェースの外側で行動判断を行う周期はこれより長くしてもよい。
+
+## 戦闘空間の定義 {#section_r7_contest_scenario_combat_area}
+
+戦域の座標系(以下「基準座標系」という。)は、NED(North-East-Down)の直交座標系とし、
+地球の曲率を無視するものとする。
+
+シミュレータの設定としては、[PureFlatCRS](#section_simulation_Coordinate_PureFlatCRS)を
+[SimulationManagerのrootCRS](#section_simulation_Coordinate_in_simulation_rootCRS)として
+設定することとなる。
+
+なお、\f$x-y\f$平面の原点を戦域の中心とし、地表面を\f$z=0\f$とする。
+目安として、戦域中心から東西に\f$d_{line}\f$ [m]、南北に\f$d_{out}\f$ [m]の矩形領域を戦域とするが、
+今回はこの領域を逸脱してもペナルティは発生しないため、外側から回り込むといった動きを試みてもよい。
+
+<span style="color:#ff0000;"><b>なお、ユース部門は高度を10,000[m]に固定した2次元平面上での戦闘とする。</b></span>
+
+## 戦闘のルール {#section_r7_contest_scenario_combat_rule}
+
+### 終了条件 {#section_r7_contest_scenario_combat_termination}
+
+戦闘は、いずれかの護衛対象機が撃墜されるか、制限時間が経過した場合に終了する。
+相手の護衛対象機を先に撃墜した陣営が勝者となり、時間切れとなった場合は引き分けとする。
+
+シミュレータの[得点](\ref SiulationManager::score)計算としては、
+相手の護衛対象機を撃墜したときに+1点が与えられる。
+
+### 戦闘機の初期配置 {#section_r7_contest_scenario_initial_state_of_fighters}
+
+東側(Blue)の戦闘機は、以下の範囲でランダムな初期配置とする。
+- 東西方向の位置は+95[km]〜+105[km]の間とする。
+- 南北方向の位置は±20[km]の間とする。
+- 高度は6000[m]〜12,000[m]の間とする。(オープン部門のみ。ユース部門は10,000[m]で固定。)
+- 速度は260[m/s]〜280[m/s]の間とする。
+- 針路は225度(南西)〜315度(北西)の間とする。
+
+西側(Red)の戦闘機は東側の戦闘機と点対称になるように配置する。
+ただし、各機を配置する順番は陣営ごとにランダムとする。
+
+### 護衛対象機の初期配置と行動 {#section_r7_contest_scenario_escorted_aircraft}
+
+東側(Blue)の護衛対象機は、
+戦域中心から東に100[km]離れた直線上で南北方向に±60[km]の2点を結んだ線分の周囲を
+反時計回りに周回し続ける。周回時の速度は250[m/s]、高度は10,000[m]とする。
+また、周回軌道上の初期位相はランダムとする。
+
+ただし、護衛対象機のMWSが相手の誘導弾を検出した場合に限り周回軌道を逸脱し、
+検出方向に背を向けて回避機動をとる。回避完了後は、速やかに元の周回軌道に戻る。
+
+西側(Red)の護衛対象機は、東側の護衛対象機と点対称な位置にある周回軌道を反時計回りに周回する。
+ただし、周回軌道上の初期位相は東側とは独立にサンプリングしたランダムな値とする。
+
+### 戦闘機の機体性能のランダム化 {#section_r7_contest_scenario_fighter_spec}
+
+オープン部門のみ、エピソードごとに各機の機体性能が以下のようにランダム化される。
+
+- 陣営内の各機の性能はバラバラに変化させる。
+
+- 両陣営の機体性能は、全体として対称となるようにする。
+    具体的には、一方の陣営について各機の機体性能を定めた後、
+    その順番をシャッフルしてもう一方の陣営の各機に設定する。
+
+- 変化させる性能は以下の7種類とし、一様分布でサンプリングする。
+    1. RCSスケール
+
+        0.4〜1.0とする。(探知距離にして約0.8倍〜1.0倍となる)
+
+    2. レーダ探知距離
+    
+        基準値からの倍率で指定し、0.8倍〜1.2倍とする。
+
+    3. レーダ探知覆域
+        
+        正面からの角度で指定し、60度〜120度とする。
+
+    4. 航空機の最大速度
+    
+        基準値からの倍率で指定し、0.8倍〜1.2倍とする。
+
+    5. 初期誘導弾数
+
+        4〜8とする。
+
+    6. 誘導弾の推力
+    
+        基準値からの倍率で指定し、0.8倍〜1.2倍とする。
+        なお、射程距離は推力に応じて増減するが、比例関係にはない。
+
+    7. 射撃承認までの遅延時間
+
+        1秒から5秒とする。tickが1秒単位なので整数となる。
+
+## 航空機のモデル {#section_r7_contest_scenario_fighter_model}
+
+### 運動・飛行制御モデル {#section_r7_contest_scenario_fighter_flight_dynamics_and_control}
+
+#### 運動モデル {#section_r7_contest_scenario_fighter_flight_dynamics}
+
+航空機の運動は 6 自由度モデルを用いて、以下の通り表現する。
+第3回空戦AIチャレンジまでのモデルより大幅に簡略化している。
+
+1. 
+    燃料の消費や誘導弾の発射による質量変化は無視し、機体の質量𝑚は一定とする。
+
+2. 
+    姿勢の表現にはクォータニオンを用いる。機体座標系成分で表示されたベクトル\f$\mbox{\boldmath$v_b$}\f$に対して
+    左から\f$q\f$をかけることで慣性座標系成分で表示されたベクトル\f$\mbox{\boldmath$v_i$}\f$
+    を得られるような\f$q\f$を用いるものとする。
+
+3. 
+    回転慣性は考慮せず、迎角と横滑り角も無視し、
+    機体のX軸と速度方向が常に一致するものとして速度ベクトルを直接操作するものとする。
+
+4. 
+    空気力及び推力を合わせた機動可能範囲を、
+    速度の上限と下限を高度を引数とする1次元テーブルデータとして、
+    加速度、角速度(速度ベクトルの変化率として)上限と下限を高度と速度を引数とする2次元テーブルデータとして与える。
+
+    速度のテーブルデータの値は、[Stevens 15]、[Webb 77]、[Hendrick 08]、[Krus 19]に示される空力データ、エンジンデータを用いた
+    F-16相当の機体モデルが水平定常飛行可能な範囲から設定している。
+
+    加速度と角速度のテーブルデータの値は、同じF-16相当の機体モデルが、
+    各高度、速度で水平飛行している状態において\f$\alpha\f$、\f$\beta\f$、エンジン推力及び各舵面(エルロン、エレベータ、ラダー)の操作量
+    を変化させたときに瞬間的に発揮できる最大の加速度、角速度の値を用いている。そのため、実際の機体モデルと比較して過剰な機動ができるようなモデルとなっている。
+
+5. 
+    ユース部門については、運動を水平面上に拘束する。
+    そのため、角速度コマンドは\f$+z\f$軸周りの方位角のみのスカラーとなる。
+
+
+オープン部門は[R7ContestMassPointFighter](\ref R7ContestModels::R7ContestMassPointFighter)クラスを、
+ユース部門は[PlanarFighter](\ref R7ContestModels::PlanarFighter)クラスを使用する。
+
+### 飛行制御モデル {#section_r7_contest_scenario_fighter_flight_control}
+
+飛行制御モードは以下の2種類から選択可能とする。
+
+- 行きたい方向や飛びたい速度等により指示する場合･･･「fromDirAndVel」モード
+
+    このモードでは、進行方向に関する目標値と加減速に関する目標値を指定することになる。
+    方向に関する指示は基準座標系における目標進行方向\f$\mbox{\boldmath$d_{dst}$}\f$
+    又は目標旋回率\f$ \frac{d}{dt} (\frac{\mbox{\boldmath$v_{i}$}}{|\mbox{\boldmath$v_{i}$}|})_{dst} \f$で
+    指定する。
+
+    ただし、上下方向についてピッチ角でなく高度で指定したい場合は、\f$\mbox{\boldmath$d_{dst}$}\f$に加えて
+    目標高度\f$h_{dst}\f$を指定することにより、[AltitudeKeeper](\ref asrc::core::AltitudeKeeper)クラスを用いて、
+    目標高度への到達に必要な目標ピッチ角が
+    \f[
+        \theta_{dst} = \mbox{min}(\theta_{max}, \mbox{max}(\theta_{min},\mbox{sin}^{-1}(\frac{1}{V}(K_{alt,P}(h-h_{dst})+K_{alt,D}\frac{dh}{dt}))))
+    \f]
+    となるように\f$\mbox{\boldmath$d_{dst}$}\f$が補正される。
+
+    また、加減速に関する指示は目標速度\f$V_{dst}\f$、目標加速度\f$a_{dst}\f$、目標推力\f$T_{dst}\f$、目標エンジンパワー\f$P_{dst}\f$の
+    いずれかで指定する。
+
+    方向に関する指示は簡易的な現在の進行方向と目標進行方向の差を参照した PD 制御によって
+    角速度ベクトルに変換されて使用され、
+    加減速に関する指示は機体性能の上下限でクリッピングされてそのまま使用される。
+
+- 角速度や加速度を直接指示する場合･･･「direct」モード
+
+    このモードでは、角速度と、加速度又はスロットルを、機体性能の上下限で正規化した値で直接指定する。
+    角速度と加速度は-1〜+1、スロットルは0〜1の範囲となる。
+
+### センサモデル {#section_r7_contest_scenario_fighter_sensor}
+
+戦闘機の搭載センサは相手側の航空機を探知するレーダと、相手側の誘導弾を探知する MWS の 2 種類とする。
+
+<b>護衛対象機はレーダを搭載せず、MWSのみを搭載しているものとする。</b>
+
+#### 相手側航空機の探知（レーダ）{#section_r7_contest_scenario_fighter_radar}
+
+- オープン部門の場合
+
+    相手側航空機の探知については、機体正面から偏角\f${\theta}_{FOR,radar}\f$以内の範囲で
+    基準探知距離を\f$L_{ref,radar}\f$、目標のRCSスケールを\f$\sigma\f$としたとき、
+    自機との距離\f$L\f$が\f$ L \le L_{ref,radar} \cdot \sigma^{1/4} \f$以内の目標について、
+    その真の三次元位置及び速度を遅延・欠損なく観測できるものとする。
+    また、誤警報及び誤相関の発生は考慮しない。
+
+- ユース部門の場合
+
+    相手側の航空機の探知については、自機と相手機が戦域上のどこにいたとしても
+    常に相手の真の三次元位置及び速度を遅延・欠損なく観測できるものとする。
+    また、誤警報及び誤相関の発生は考慮しない。
+
+#### 相手側誘導弾の探知（MWS）{#section_r7_contest_scenario_fighter_mws}
+
+相手側誘導弾の探知については、[シーカ](#section_r7_contest_scenario_missile_sensor)が起動していて、
+かつ自機を捕捉している状態のものに限り、
+その誘導弾の自機からみた真の方向を遅延・欠損なく観測できるものとする。
+
+### ネットワークによる情報共有{#section_r7_contest_scenario_fighter_datalink}
+
+味方の機体の諸元は、全て真の諸元を遅延・欠損なく共有できるものとする。
+相手側の航空機及び誘導弾の諸元は、自陣営のいずれかの機体がセンサで捉えている場合に、同等
+の情報を遅延・欠損なく取得できるものとする。このとき、複数の機体が同一の目標を探知できてい
+る場合は、それらの探知情報を算術平均により合成して扱うものとする。
+
+### 人間による介入の模擬{#section_r7_contest_scenario_fighter_human_intervention}
+
+行動判断モデルの行動判断に対する人間による介入の模擬として、行動判断モデルが射撃行動を出力した際に、
+一定時間の判断遅延を経て射撃行動の承認が行われるような介入モデルを導入する。
+介入モデルは、行動判断モデルから射撃行動の出力を認知するたび、
+その射撃対象と出力時刻の組を最大\f$C_h\f$組記憶する。
+記憶組数が上限に達している状態で認知した場合は無視する。
+また、記憶してから\f$\Delta t_{h,delay}\f$秒経過した組について、射撃行動を承認し、
+戦闘機モデルに射撃コマンドを送信し、記憶から消去する。
+また、行動判断モデルからごく短時間で複数の射撃行動を出力されたとしても反応できないことを模擬するため、
+最後に射撃行動の出力を認知、記憶した時点から\f$\Delta t_{h,cooldown}\f$秒経過するまでは
+新たな射撃行動の出力を認知できないものとする。
+
+### 武装モデル {#section_r7_contest_scenario_weapon}
+
+戦闘機モデルは後述の誘導弾を 1 機あたり\f$N_{msl}\f$発搭載しているものとし、
+前述の人間介入モデルから射撃コマンドが送信された場合直ちに誘導弾の発射処理を行うものとする。
+
+## 誘導弾のモデル {#section_r7_contest_scenario_missile_model}
+
+### 運動・飛行制御モデル {#section_r7_contest_scenario_missile_flight_dynamics_and_control}
+
+誘導弾の性能については、[Ekker 94]及び[Redmon 80]に記載されている AMRAAM相当の値を用いるものとする。
+
+#### 空気力モデル {#section_r7_contest_scenario_missile_aerodynamics}
+
+誘導弾に働く空気力は[Ekker 94]に記載されているモデルを用いるが以下の 2 点の改変を加える。
+1. 全て MKS 単位系(角度は rad)を用いるものとする。
+2. 遷音速域(\f$0.95 \le M \le 1.2\f$)について一部の関数が適用対象外となるが、モデルを簡略化するために、
+    亜音速域または超音速域の計算方法をそのまま準用して計算するものとする。
+
+#### 推力モデル {#section_r7_contest_scenario_missile_flight_propulsion}
+
+誘導弾の推力モデルは、射撃後に燃焼時間\f$ t_{burn} \f$ が経過するまでの間は一定の推力\f$ T_{msl} \f$を発生し、
+それ以降の推力は 0 とする単純な Boost-Glide モデルとする。
+
+#### 運動モデル {#section_r7_contest_scenario_missile_flight_dynamics}
+
+誘導弾の運動は以下の通り簡略化したものを用いる。
+1. 誘導弾の姿勢（座標系）は、戦闘機モデルと同様に、弾体軸固定座標系を\f$y\f$軸まわりに回転させて
+    速度ベクトルの方向が\f$x\f$軸に一致するようにした座標系を指すものとする。姿勢表現は戦闘機モデル
+    と同様とする。
+
+2. 誘導弾の姿勢運動について、\f$x\f$軸周りの回転は無視する。また、\f$y,z\f$軸周りの回転は直ちに所要の
+    姿勢をとれるものとして扱う。
+
+3. 2.により、迎角\f${\alpha}\f$と舵角\f${\delta}\f$を直接制御入力として扱うものとする。
+ただし、[空気力モデル](#section_r7_contest_scenario_missile_aerodynamics)において
+\f${\alpha}\f$と\f${\delta}\f$により生じるピッチングモーメントが 0 に釣り合うことを制約条件とする。
+
+#### 飛行制御モデル {#section_r7_contest_scenario_missile_flight_control}
+
+誘導弾の飛行制御は、目標の航跡情報(位置及び速度)に基づき、ゲイン \f$ G \f$ の単純な比例航法により計算した
+必要角速度を実現するために必要な横力を生じさせる\f${\alpha}\f$と\f${\delta}\f$の組を計算することによって
+行うものとする。また、横方向加速度には上限 \f$ G_{limit,msl} \f$ を設ける。
+
+### 最大飛翔時間及び命中判定 {#section_r7_contest_scenario_missile_termination}
+
+誘導弾の有効飛翔時間は\f$t_{M,max}\f$秒間とし、その時間内に自陣営以外のいずれかの戦闘機との距離が
+\f$d_{hit}\f$以下となった場合には起爆するものとし、その時点で命中半径内に存在している全ての自陣営以外
+の戦闘機に対し撃墜判定を与えるものとする。また、燃焼終了後に飛翔速度が\f$V_{M,min}\f$を下回った場合は、
+飛翔時間が残っていたとしても当該誘導弾を無効化するものとする。
+
+### センサモデル {#section_r7_contest_scenario_missile_sensor}
+
+誘導弾自身の諸元は真の値を遅延・欠損なく取得できるものとする。
+目標機の航跡情報は発射母機が保持している場合は発射母機と同一の情報を遅延・欠損なく取得できるものとする。
+
+自身の保持している目標情報との距離が\f${d_{M_s}}\f$以内となった場合、シーカを起動するものとし、
+以後は発射母機からの航跡供給の有無によらず、
+目標が自身の覆域内（正面から偏角\f${\theta}_{FOR,seeker}\f$以内の範囲）に存在し、
+かつ目標の推定方向を中心とした視野内（偏角\f${\theta}_{FOV,seeker}\f$以内の範囲）に存在している
+場合に目標の真の位置・速度を必ず遅延・欠損なく取得できるものとする。
+
+また、覆域の計算においては簡略化のために迎角の影響は無視し、その中心が常に進行方向と一致するものとする。
+
+発射母機とシーカのいずれも目標を探知できていない場合は、
+目標が等速直線運動をしていると仮定して外挿を行い、誘導を継続するものとする。
+
+# 設定値の一覧 {#section_r7_contest_scenario_parameters}
+
+本文中の数式で表した変数の基準値は以下のとおりとする。
+
+本文中の記号|シミュレータ中の変数名|意味|基準値|単位
+------------|----------------------|-- -|------|----
+\f$d_{line}\f$| BasicAirToAirCombatModels01::BasicAACRuler01::dLine |戦域中心から戦域の東西端までの距離|125,000|m
+\f$d_{out}\f$| BasicAirToAirCombatModels01::BasicAACRuler01::dLine |戦域中心から戦域の南北端までの距離|75,000|m
+\f$K_{alt,P}\f$| [AltitudeKeeper::pGain](\ref util::AltitudeKeeper::pGain)|目標高度から目標ピッチ角を計算する際の比例ゲイン|-0.3|-
+\f$K_{alt,D}\f$|  [AltitudeKeeper::dGain](\ref util::AltitudeKeeper::dGain)|目標高度から目標ピッチ角を計算する際の微分ゲイン|-0.1|-
+\f$\theta_{min}\f$|  [AltitudeKeeper::minPitch](\ref util::AltitudeKeeper::minPitch)|目標ピッチ角の下限|-10|deg
+\f$\theta_{max}\f$|  [AltitudeKeeper::maxPitch](\ref util::AltitudeKeeper::maxPitch)|目標ピッチ角の上限|10|deg
+\f$L_{ref,radar}\f$| AircraftRadar::Lref |レーダの基準探知距離|100,000(オープン)、100,000,000(ユース)|m
+\f${\theta}_{FOR,radar}\f$| AircraftRadar::thetaFOR |レーダの覆域|90(オープン)、180(ユース)|deg
+\f$C_h\f$| HumanIntervention::capacity |人間介入モデルの記憶可能な射撃行動出力の組数|1|-
+\f$\Delta t_{h,delay}\f$| HumanIntervention::delay |人間介入モデルの射撃行動の承認までの遅延時間|3|s
+\f$\Delta t_{h,cooldown}\f$| HumanIntervention::cooldown |人間介入モデルの射撃行動出力を認知できる間隔|0.999|s
+\f$N_{msl}\f$| Fighter::numMsls |搭載誘導弾数|6(戦闘機のみ)|-
+\f$t_{burn}\f$| EkkerMissile::tBurn |燃焼時間|5.34|s
+\f$T_{msl}\f$| EkkerMissile::thrust |推力|30017.9989|N
+\f$G_{limit,msl}\f$| EkkerMissile::maxLoadG |横方向 G 制限|31|G
+\f$d_{hit}\f$| EkkerMissile::hitD |命中判定距離|1000|m
+\f$t_{M,max}\f$| EkkerMissile::tMax |最大飛翔時間|150|s
+\f$V_{M,min}\f$|  EkkerMissile::minV |飛翔下限速度|150|m/s
+\f$G\f$| PropNav::gain |比例航法ゲイン|15|-
+\f${d_{M_s}}\f$| MissileSensor::Lref |誘導弾搭載センサの基準探知距離|10,000|m
+\f${\theta}_{FOR,seeker}\f$| MissileSensor::thetaFOR |誘導弾搭載センサの覆域|60|deg
+\f${\theta}_{FOV,seeker}\f$| MissileSensor::thetaFOV |誘導弾搭載センサの視野角|15|deg
+
+
+# 参考文献 {#section_r7_contest_scenario_citation}
+
+[Ekker 94] Ekker, David A. Missile Design Toolbox. Diss. Monterey, California. Naval
+Postgraduate School, 1994.
+
+[Hendrick 08] Hendrick, P., Bourdiaudhy, K., and Herbiet, J. F. "A Flight Thrust Deck for
+the F100 Turbofan of the F-16 Aircraft." 26th Congress of International Council of the
+Aeronautical Sciences (ICAS), 2008.
+
+[Krus 19] Krus, Petter, and Abdallah, Alvaro. "Modelling of Transonic and Supersonic
+Aerodynamics for Conceptual Design and Flight Simulation." Proceedings of the 10th
+Aerospace Technology Congress, 2019.
+
+[Redmon 80] Redmon, Danny Ray. Tactical Missile Conceptual Design. Naval Postgraduate
+School Monterey CA, 1980.
+
+[Stevens 15] Stevens, Brian L., et al. "Aircraft Control and Simulation: Dynamics, Controls
+Design, and Autonomous Systems." John Wiley & Sons, 2015.
+
+[Webb 77] Webb, T. S., Kent, D. R., and Webb, J. B. "Correlation of F-16 aerodynamics and
+performance predictions with early flight test results." Agard Conference Proceedings. N
+242, 1977.
+
+*/
+    }
+}

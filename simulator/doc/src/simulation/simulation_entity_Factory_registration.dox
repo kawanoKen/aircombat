@@ -1,0 +1,184 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_entity_Factory_registration Factory への Entity クラス・モデルの登録
+
+Factory は登録されたクラスとモデルを、対応する基底クラスごとにグループ分けして管理する。
+グループ名は CoordinateReferenceSystem 、 PhysicalAsset 、 Controller 、 Agent 、 Ruler 、 Reward 、 Viewer 、 Callback の 8 種類であり、
+同一グループの中では名称の重複は認められない。また、本シミュレータの実装においてはこのグループ名を baseName と称している。
+
+クラスの登録は static メンバとして同一アドレス空間内の全 SimulationManager インスタンスで共有されるが、
+モデルの登録についてはクラスと同じく static メンバとして登録する方法と、
+各 SimulationManager の config 経由でインスタンス固有のモデルとして登録する方法の 2 種類が用意されている。登録は以下のように行う。
+
+# クラスの登録 {#section_Factory_class_registration}
+
+例えばグループ名が PhysicalAsset 、クラス名がClassNameの場合、以下のように登録する。
+
+- C++からの登録(推奨は例3の方法)
+    ```.cpp
+    #include <ASRCAISim1/Factory.h>
+    // 例1: プラグイン名(パッケージ名)による区別をしない場合
+    // Factoryのstaticメンバを直接呼び出す。
+    // この場合、単に"ClassName"という名称で登録される。
+    Factory::addClass(
+        "PhysiacalAsset",
+        "ClassName",
+        &ClassName::create<typename ClassName::Type,const nl::json&,const nl::json&>
+    );
+
+    // 例2: プラグイン名(パッケージ名)に対応したFactoryHelperインスタンスのメンバを呼ぶ
+    // プラグインのエントリポイント関数においてFactoryHelperインスタンスが得られるのでそれを用いる。
+    // この場合、プラグイン名がprefixとして付き、"pluginName.ClassName"のような名称で登録される。
+    factoryHelper->addClass(
+        "PhysiacalAsset",
+        "ClassName",
+        &ClassName::create<typename ClassName::Type,const nl::json&,const nl::json&>
+    );
+
+    // 例3: 例2と等価なマクロを用いる
+    // このマクロはFactoryHelperインスタンスを表す変数名が"factoryHelper"であることを前提としている。
+    // この場合も、プラグイン名がprefixとして付き、"pluginName.ClassName"のような名称で登録される。
+    FACTORY_ADD_CLASS(PhysicalAsset,ClassName)
+    ```
+
+- Pythonからの登録(推奨は例2の方法)
+    ```python
+    from ASRCAISim1.core import Factory
+
+    # 例1: プラグイン名(パッケージ名)による区別をしない場合
+    # Factoryのstaticメンバを直接呼び出す。
+    # この場合、単に"ClassName"という名称で登録される。
+    Factory.addPythonClass('PhysicalAsset','ClassName',ClassName)
+
+    # 例2: プラグイン名(パッケージ名)に対応したFactoryHelperインスタンスのメンバを呼ぶ
+    # ASRCAISim1.common_init_for_plugin によって初期化後のプラグインは"factoryHelper"という名前で
+    # Factoryインスタンスを持っているのでそれを用いる。
+    # この場合、プラグイン名がprefixとして付き、"pluginName.ClassName"のような名称で登録される。
+    factoryHelper.addPythonClass('PhysicalAsset','ClassName',ClassName)
+    ```
+
+# モデルの登録 {#section_Factory_model_registration}
+
+例えばグループ名… PhysicalAsset 、クラス名…ClassName、モデル名…ModelName の場合、以下のように登録する。
+
+- modelConfigを直接指定する場合
+    ```cpp
+    nl::json modelConfig={...};
+    Factory::addDefaultModel("PhysicalAsset","ModelName",modelConfig); // staticメンバへの登録
+    factoryHelper->addDefaultModel("PhysicalAsset","ModelName",modelConfig); // FactoryHelper経由でのstaticメンバへの登録。
+                                                                             // クラスの登録と同様に、プラグイン名がprefixとして前に付き、
+                                                                             // "pluginName.ModelName"のような名称で登録される。
+    factory->addModel("PhysicalAsset","ModelName",modelConfig); // Factoryインスタンス固有モデルとしての登録
+    manager->addModel("PhysicalAsset","ModelName",modelConfig); // SimulationManager(EntityManager)インスタンス固有モデルとしての登録
+    ```
+    ```python
+    modelConfig={...}
+    Factory.addDefaultModel("PhysicalAsset","ModelName",modelConfig) # staticメンバへの登録
+    factoryHelper.addDefaultModel("PhysicalAsset","ModelName",modelConfig) # FactoryHelper経由でのstaticメンバへの登録
+                                                                           # クラスの登録と同様に、プラグイン名がprefixとして前に付き、
+                                                                           # "pluginName.ModelName"のような名称で登録される。
+    factory.addModel("PhysicalAsset","ModelName",modelConfig) # Factoryインスタンス固有モデルとしての登録
+    manager.addModel("PhysicalAsset","ModelName",modelConfig) # SimulationManager(EntityManager)インスタンス固有モデルとしての登録
+    ```
+
+- 複数のモデルをjson objectを用いて一括で登録する場合
+    ```cpp
+    json={
+        {"PhysicalAsset",{ # baseNameを第1階層のキーとする
+            {"ModelName",{ # modelNameを第2階層のキーとする
+                {"class","ClassName"},
+                {"config",{...}} # modelConfig
+            }},
+            ...
+        }},
+        ...
+    }
+    Factory::addDefaultModelsFromJson(json); // staticメンバへの登録
+    factoryHelper->addDefaultModelsFromJson(json); // FactoryHelper経由でのstaticメンバへの登録。
+                                                   // クラスの登録と同様に、プラグイン名がprefixとして前に付き、
+                                                   // "pluginName.ModelName"のような名称で登録される。
+    factory->addDefaultModelsFromJson(json); // Factoryインスタンス固有モデルとしての登録
+    manager->addDefaultModelsFromJson(json); // SimulationManager(EntityManager)インスタンス固有モデルとしての登録
+    ```
+
+    ```python
+    json={
+        "PhysicalAsset":{ # baseNameを第1階層のキーとする
+            "ModelName":{ # modelNameを第2階層のキーとする
+                "class":"ClassName",
+                "config":{...} # modelConfig
+            },
+            ...
+        },
+        ...
+    }
+    Factory.addDefaultModelsFromJson(json) #staticメンバへの登録
+    factoryHelper.addDefaultModelsFromJson(json) # FactoryHelper経由でのstaticメンバへの登録
+                                                 # クラスの登録と同様に、プラグイン名がprefixとして前に付き、
+                                                 # "pluginName.ModelName"のような名称で登録される。
+    factory.addModel(json) # Factoryインスタンス固有モデルとしての登録
+    manager.addModel(json) # SimulationManager(EntityManager)インスタンス固有モデルとしての登録
+    ```
+
+- 複数のモデルをjsonファイルから読み込んで一括で登録する場合
+
+    前述のjson objectが記述されたjsonファイルのパスをfilepathとして、
+
+    ```cpp
+    Factory::addDefaultModelsFromJsonFile(filepath); // staticメンバへの登録
+    factoryHelper->addDefaultModelsFromJsonFile(filepath); // FactoryHelper経由でのstaticメンバへの登録。
+                                                           // クラスの登録と同様に、プラグイン名がprefixとして前に付き、
+                                                           // "pluginName.ModelName"のような名称で登録される。
+    factory->addDefaultModelsFromJsonFile(filepath); // Factoryインスタンス固有モデルとしての登録
+    manager->addDefaultModelsFromJsonFile(filepath); // SimulationManager(EntityManager)インスタンス固有モデルとしての登録
+    ```
+
+    ```python
+    Factory.addDefaultModelsFromJsonFile(filepath) #staticメンバへの登録
+    factoryHelper.addDefaultModelsFromJsonFile(filepath) # FactoryHelper経由でのstaticメンバへの登録
+                                                         # クラスの登録と同様に、プラグイン名がprefixとして前に付き、
+                                                         # "pluginName.ModelName"のような名称で登録される。
+    factory.addDefaultModelsFromJsonFile(filepath) # Factoryインスタンス固有モデルとしての登録
+    manager.addDefaultModelsFromJsonFile(filepath) # SimulationManager(EntityManager)インスタンス固有モデルとしての登録
+    ```
+
+- SimulationManager のコンストラクタで一括登録する場合
+
+    SimulationManager のコンストラクタに与えるコンフィグの"Factory"キーの値に、前述のjson objectに相当する内容を記述して渡す。
+
+    ```json
+    config={
+        "Manager":{...},
+        "Factory":{
+            "PhysicalAsset":{
+                "ModelName":{
+                    "class":"ClassName",
+                    "config":{...}
+                },
+                ...
+            },
+            ...
+        }
+    }
+    ```
+
+# Factoryによるクラス・モデルの検索 {#section_simulation_Factory_resolveModelConfig}
+
+プラグインから FactoryHelper 経由で Factory に登録されたクラス・モデルは、
+その登録名が"."区切りで"pluginName.ClassName"のようになる。
+
+Factory は、ユーザが Entity インスタンスを生成する際にプラグイン名を省略した場合でも、プラグインやインスタンスの依存関係を辿って
+プラグイン名を推論して該当するクラス・モデルを検索する機能を有している。
+
+また、Factory は、ユーザがプラグイン名を省略していなくてもインポートを忘れていた場合には自動で該当するプラグインのインポートを試みる。
+
+これらの検索機能は、 [Factory::resolveModelConfig](\ref Factory::resolveModelConfig(const std::string&,const std::string&,const std::string&,const nl::json&,const FactoryHelperChain&,bool) const)
+関数によって提供されている。与えることのできる引数は各オーバーロードのリファレンスを参照されたい。
+
+なお、この関数は [EntityManager](\ref EntityManager::resolveModelConfig) と [Entity](\ref Entity::resolveModelConfig(const nl::json&) const) からも呼び出せるようになっている。
+
+*/
+    }
+}

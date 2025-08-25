@@ -1,0 +1,127 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_MatchMaker_TwoTeamCombatMatchMaker 2陣営による戦闘とした基本的なMatchMaker/MatchMonitor
+
+# 使用時の前提 {#section_MatchMaker_TwoTeamCombatMatchMaker_prerequisites}
+
+-陣営名は"Blue"と"Red"を基準とする。 SimulationManager の Ruler の設定もこれに合わせること。
+-学習対象のPolicyは"Learner"とし、初期行動判断モデルは"Initial"とする。
+    SimulationManager の [AgentConfigDispatcher](#section_simulation_execution_agent_config_dispatch)
+    はサンプルに示すような形式で各Policy名に対応するaliasを登録しておくこと。
+- 一つの陣営を操作するPolicyは一種類とする。つまり、 SimulationManager の対応する Agent も一種類となる。
+- 各Policyは1体で1陣営分を動かしても、1体で1機を動かしてもよく、対戦カードにはその設定を表すbool型の"MultiPort"キーを追加している。
+- 使用する環境クラス( GymManager 又はその派生クラス)をwrapEnvForTwoTeamCombatMatchMakingでラップしたものを使用し、
+    学習プログラムにおいてenv.setMatch関数を呼び出して対戦カードの反映を行うこと。
+- 対戦カードのSuffixは、学習中重みの場合は""(空文字列)、過去の重みをBlue側で使用する場合は"_Past_Blue"、過去の重みをRed側で使用する場合は"_Past_Red"とする。
+    これらのSuffixを付加した名称に対応するPolicyインスタンスを学習プログラム側で用意すること。
+
+# ログの記録 {#section_MatchMaker_TwoTeamCombatMatchMaker_logging}
+
+このサンプルでは対戦ログの記録についても実装例を示している。
+学習の進捗チェック用に、AlphaStar[1]で用いられているPayOffとイロレーティングを算出しており、
+それらをget_metricsでTensorboardログとして使用できる形式で出力するとともに、各エピソードの結果をcsvファイルに出力する。
+
+[1] Vinyals, Oriol, et al. "Grandmaster level in StarCraft II using multi-agent reinforcement learning." Nature 575.7782 (2019): 350-354.
+
+# makeNextMatch に関する設定機能の追加 {#section_MatchMaker_TwoTeamCombatMatchMaker_override}
+
+このクラスでは、MatchMaker.makeNextMatch をオーバーライドしており、
+各陣営の初期条件に関する設定や Factory モデルの置換ができるようになっている。
+
+また、makeNextMatch を以下の3つの関数に分解している。
+派生クラスでは必要な部分のみオーバーライドして使用することが可能である。
+- setAgent  : 各teamの "Policy","Weight","Suffix"を選択する処理を書く。
+- setInitialState   : 各teamの"InitialState"を選択する処理を書く。
+- setCommonCondition    : "common"に与えるその他の条件(Factoryコンフィグの置換等)を書く。
+
+```python
+{
+    "teams": {
+        <Team's name>: {
+            "Policy": str, # teamを動かすPolicyの名前
+            "Weight": int, # teamを動かすPolicyの重み番号
+            "Suffix": str, # teamを動かすPolicyの接尾辞。同名のPolicyで異なる重みを使用する場合等に指定する。省略は不可。
+            "InitialState": dict, # teamの各Assetの初期状態を表現するdict。
+                                    # ManagerコンフィグのAssetConfigDispatcherに
+                                    # team+"InitialState"というaliasで各機のinstanceConfigを設定する。
+        }
+    },
+    "common": {
+        "Factory": dict, # Factoryコンフィグの置換用patch。派生クラスで定義する。
+}
+```
+
+# 対戦カードの生成方式 {#section_MatchMaker_TwoTeamCombatMatchMaker_matchmaking}
+
+- Blue側
+
+    学習中の"Learner"又は一定確率(expert_ratio)で教師役の"Expert"
+- Red側
+
+    一定エピソード数(warm_up_episodes)の経過前は常に初期行動判断モデル("Initial")とし、
+    経過後は
+    1. 学習中重みの直近のコピー
+    2. 初期行動判断モデル("Initial")
+    3. 過去の保存された重みから一様分布で選択
+
+    の3種類を4:4:2の割合で選択
+
+# 初期状態の生成方式 {#section_MatchMaker_TwoTeamCombatMatchMaker_initial_state}
+
+このクラスでは、以下のように初期状態を設定する。
+- teams[0]側について、lower_bound〜upper_boundの範囲内で、number機分の初期状態を設定する。
+- teams[1]側については、lower_boundとupper_boundをz軸を中心に点対称に反転する。
+- symmetricをTrueとした場合はteams[0]とteams[1]の各機が点対称になるように配置する。
+
+# configの書式 {#section_MatchMaker_TwoTeamCombatMatchMaker_config}
+
+```python
+config={
+    # 基底クラスで指定されたもの
+    "restore": None or str, #チェックポイントを読み込む場合、そのパスを指定。
+    "weight_pool": str, #重みの保存先ディレクトリを指定。<policy>-<id>.datのようにPolicy名と重み番号を示すファイル名で保存される。
+    "policy_config": { #Policyに関する設定。Policy名をキーとしたdictで与える。
+        <Policy's name>: {
+            "multi_port": bool, #1体で1陣営分を動かすタイプのPolicyか否か。デフォルトはFalse。
+            "active_limit": int, #保存された過去の重みを使用する数の上限を指定する。
+            "is_internal": bool, #SimulationManagerクラスにおけるInternalなPolicyかどうか。
+            "populate": None or { #重み保存条件の指定
+                "firstPopulation": int, # 初回の保存を行うエピソード数。0以下の値を指定すると一切保存しない。
+                "interval": int, # 保存間隔。0以下の値を指定すると一切保存しない。
+                "on_start": bool, # 開始時の初期重みで保存するかどうか。省略時はFalseとなる。
+                "reset"; float, #重み保存時の重みリセット確率(0〜1)
+            },
+            "rating_initial": float, #初期レーティング
+            "rating_fixed": bool, #レーティングを固定するかどうか。
+            "initial_weight": None or str, #初期重み(リセット時も含む)のパス。
+        },
+        ...
+    },
+    "match_config": {#対戦カードの生成に関する指定。このサンプルでは以下のキーを指定可能。
+        "expert_ratio": float, #摸倣学習を行う際にLearnerの代わりに教師役(Expert)が選択される確率。省略時は0。
+        "warm_up_episodes": int, #学習初期に対戦相手を"Initial"に固定するエピソード数。デフォルトは1000。
+        "symmetric_initial_state": bool, # 初期配置を点対称にするかどうか。省略時はTrue
+        "initial_state_number": int # このMatchMakerで設定すべき初期条件の数。
+        "initial_state_lower": { #Blue(teams[0])だった場合に設定する初期条件の下限値。省略時は置換しない。
+            "pos:": 3-dim list[float], #初期位置
+            "vel": float, #初期速度
+            "heading": float, #初期方位(真北を0とし東回りを正とする)
+        },
+        "initial_state_upper": { #Blue(teams[0])だった場合に設定する初期条件の上限値。省略時は置換しない。
+            "pos:": 3-dim list[float], #初期位置
+            "vel": float, #初期速度
+            "heading": float, #初期方位(真北を0とし東回りを正とする)
+        },
+    }, 
+    # このクラスで追加されたもの
+    "seed": None or int, #MatchMakerとしての乱数シードを指定。
+    "log_prefix": str, #全対戦結果をcsv化したログの保存場所。
+    "teams": list[str], #登場する陣営名のリスト。省略時は["Blue","Red"]となる。必要がない限り指定しない。
+}
+```
+
+*/
+    }
+}

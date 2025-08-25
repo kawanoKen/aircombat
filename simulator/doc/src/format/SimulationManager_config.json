@@ -1,0 +1,70 @@
+/**
+ * Copyright (c) 2021-2025 Air Systems Research Center, Acquisition, Technology & Logistics Agency(ATLA)
+ * @file
+ * 
+ * @brief SimulationManagerクラスのコンストラクタに与えるconfigのフォーマットに関する説明
+ */
+{
+    "Manager": {
+        "seed": int, // 乱数のシード値(uint32_t)
+        "measureTime": bool=false, // 各phaseの処理時間を計測するかどうか
+        "numThreads": int=1, // スレッド数(基本的には1を推奨)
+        "skipNoAgentStep": bool=true, // 誰も行動しないstepのreturnを省略するかどうか
+        "enableStructuredReward": bool=false, // 報酬をいくつかのグループに分けたdictとするかどうか
+        "exposeDeadAgentReward": bool=true, // 生存していないAgentへの報酬を出力し続けるかどうか
+        "delayLastObsForDeadAgentUntilAllDone": bool=true, // 生存状態がfalseとなったAgentに関するstepのreturnをエピソード終了時まで遅延するかどうか
+
+        "Epoch": dict, // 基準時刻の設定。省略時は2000-01-01T12-00-00 in TTとなる。
+        "TimeStep": {
+            "baseTimeStep": float=0.1, // 1 tickあたりの秒数
+            "defaultAgentStepInterval": int=1 // Agentのデフォルトの行動判断周期(tick単位)
+        },
+
+        "CoordinateReferenceSystem": {
+            "preset": dict, // 初期化時に生成するCRSを列挙する。
+                            // キーが各CRSのfull nameとなる。
+                            // 値は通常のEntity生成用コンフィグ(doc/format/Entity_creation_config.json)を記述すればよい。
+                            // なお、ここではisEpisodicとbaseNameは省略可能(自動設定されるため)
+            "root": { // 基準座標系を指定する。省略時はPureFlatCRSとなる。
+
+                // (推奨) presetから選択する場合は"entityFullName"を指定する。
+                "entityFullName": str,
+
+                // (非推奨) 直接生成する場合は以下の例のように通常のEntity生成用コンフィグ(doc/format/Entity_creation_config.json)を記述すればよい。
+                // ただし、ここではisEpisodicとbaseNameは省略不可能
+                "class": "PureFlatCRS",
+                "config": {}
+            }
+        },
+        "ViewerType": str="None", // Viewer のモデル名
+        "Ruler": str or dict, // Ruler のモデル名 又は Ruler を生成するための json object(doc/format/Entity_creation_config.json)
+        "Rewards": [ // Reward モデルと計算対象 Agent のリスト
+            {
+                "model": str, // Reward のモデル名
+                "target": str or list[str] // 計算対象のAgentの指定。
+                                           // "All"、"Team:<team>"、"Agent:<agent full name>"を組み合わせて指定する。
+                                           // <team>と<agent full name>は正規表現で指定可能。
+            }
+        ],
+        "Callbacks": dict, // 一般のCallback
+                           // キーが各Callbackのfull nameとなる。
+                           // 値は クラス名 + model config による指定 又は モデル名 による指定のみに対応。
+        "Loggers": dict, // Logger
+                         // キーが各Loggerのfull nameとなる。
+                         // 値は クラス名 + model config による指定 又は モデル名 による指定のみに対応。
+
+        "Assets": { // PhysicalAsset の生成コンフィグを記述する。 ConfigDispatcher により展開される。
+
+        },
+        "AssetConfigDispatcher": { // PhysicalAsset の生成用の ConfigDispatcher の初期化用コンフィグを記述する。
+        },
+        "AgentConfigDispather": { // Agent の生成用の ConfigDispatcher の初期化用コンフィグを記述する。
+
+        },
+
+        // 以下は通常は指定不要。
+        "uuid": str, // UUIDを指定したい場合のみ、それを表す文字列を記述する。
+        "episode_index": int // 生成時点でのepisode indexを指定したい場合、その値を記述する。
+    },
+    "Factory": dict // Factory::addModelConfigsFromJson に与えることのできるjson object(doc/format/Factory_add_model_config.json)
+}

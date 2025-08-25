@@ -1,0 +1,108 @@
+\_form#0=60x18:$t_{memory}$
+\_form#1=42x18:$R_{head}$
+\_form#2=35x18:$R_{tail}$
+\_form#3=44x18:$L_{limit}$
+\_form#4=40x18:$\theta_{limit}$
+\_form#5=42x12:$x-y$
+\_form#6=40x12:$z=0$
+\_form#7=33x18:$d_{line}$
+\_form#8=30x18:$d_{out}$
+\_form#9=75x16:$t_{reconsider}$
+\_form#10=65x19:$L_{margin1}$
+\_form#11=67x19:$L_{margin2}$
+\_form#12=35x19:$\theta_{keep}$
+\_form#13=32x12:$r_{adv}$
+\_form#14=30x18:$\theta_{adv}$
+\_form#15=67x14:$p_{Ally,Adv}$
+\_form#16=67x14:$p_{Ally,App}$
+\_form#17=74x14:$p_{Ally,Keep}$
+\_form#18=67x14:$p_{Self,Adv}$
+\_form#19=19x12:$\mbox{\boldmath$v_b$}$
+\_form#20=9x12:$q$
+\_form#21=75x14:$p_{Self,Keep}$
+\_form#22=18x12:$\mbox{\boldmath$v_i$}$
+\_form#23=47x18:$R_{Head}$
+\_form#24=11x9:$r$
+\_form#25=75x18:$r < k_{shoot}$
+\_form#26=49x18:$N_{simul}$
+\_form#27=42x18:$k_{shoot}$
+\_form#28=11x9:$\alpha$
+\_form#29=12x18:$\beta$
+\_form#30=77x18:$r < k_{break}$
+\_form#31=68x16:$t_{withdraw}$
+\_form#32=23x14:$+z$
+\_form#33=56x18:$\theta_{evasion}$
+\_form#34=58x18:$h_{evasion}$
+\_form#35=32x18:$\mbox{\boldmath$d_{dst}$}$
+\_form#36=79x26:$ \frac{d}{dt} (\frac{\mbox{\boldmath$v_{i}$}}{|\mbox{\boldmath$v_{i}$}|})_{dst} $
+\_form#37=30x18:$h_{dst}$
+\_form#38=529x39:\[        \theta_{dst} = \mbox{min}(\theta_{max}, \mbox{max}(\theta_{min},\mbox{sin}^{-1}(\frac{1}{V}(K_{alt,P}(h-h_{dst})+K_{alt,D}\frac{dh}{dt}))))
+\]
+\_form#39=30x18:$V_{dst}$
+\_form#40=28x12:$a_{dst}$
+\_form#41=32x16:$T_{dst}$
+\_form#42=30x18:$P_{dst}$
+\_form#43=42x18:$\theta_{extra}$
+\_form#44=68x18:$\pm \theta_{normal}$
+\_form#45=56x18:$h_{normal}$
+\_form#46=82x18:$\pm \theta_{withdraw}$
+\_form#47=70x18:$h_{withdraw}$
+\_form#48=53x18:$\pm \theta_{RTB}$
+\_form#49=42x18:$h_{RTB}$
+\_form#50=63x19:$d_{limit,dir}$
+\_form#51=67x19:$d_{limit,ref}$
+\_form#52=72x19:$d_{limit,keep}$
+\_form#53=81x19:${\theta}_{FOR,radar}$
+\_form#54=74x19:$L_{ref,radar}$
+\_form#55=11x9:$\sigma$
+\_form#56=12x14:$L$
+\_form#57=152x23:$ L \le L_{ref,radar} \cdot \sigma^{1/4} $
+\_form#58=74x19:$d_{limit,turn}$
+\_form#59=54x18:$\theta_{normal}$
+\_form#60=68x18:$\theta_{withdraw}$
+\_form#61=39x18:$\theta_{RTB}$
+\_form#62=81x19:$d_{limit,keepf}$
+\_form#63=46x19:$\mbox{\boldmath$d_{dst,h}$}$
+\_form#64=26x19:$\theta_{d,v}$
+\_form#65=282x23:\[\mbox{\boldmath$d_{dst}$} = \mbox{\boldmath$d_{dst,h}$} \mbox{cos}\theta_{d,v}+(0,0,\mbox{sin}\theta_{d,v})^T
+\]
+\_form#66=70x19:$\theta_{limit,cmd}$
+\_form#67=21x18:$C_h$
+\_form#68=65x16:$T_{nominal}$
+\_form#69=67x19:$\Delta t_{h,delay}$
+\_form#70=82x18:$V_d=V_{RTB}$
+\_form#71=35x18:$V_{min}$
+\_form#72=65x19:$V_{recovery}$
+\_form#73=130x19:$V_d=V_{recovery,dst}$
+\_form#74=91x19:$\Delta t_{h,cooldown}$
+\_form#75=37x18:$N_{msl}$
+\_form#76=121x18:$0.95 \le M \le 1.2$
+\_form#77=37x16:$ t_{burn} $
+\_form#78=35x16:$ T_{msl} $
+\_form#79=11x12:$y$
+\_form#80=11x9:$x$
+\_form#81=28x12:$y,z$
+\_form#82=11x9:${\alpha}$
+\_form#83=9x14:${\delta}$
+\_form#84=14x14:$ G $
+\_form#85=72x19:$ G_{limit,msl} $
+\_form#86=54x18:$t_{M,max}$
+\_form#87=26x18:$d_{hit}$
+\_form#88=54x19:$V_{M,min}$
+\_form#89=28x19:${d_{M_s}}$
+\_form#90=84x19:${\theta}_{FOR,seeker}$
+\_form#91=84x19:${\theta}_{FOV,seeker}$
+\_form#92=47x19:$K_{alt,P}$
+\_form#93=47x19:$K_{alt,D}$
+\_form#94=33x18:$\theta_{min}$
+\_form#95=35x18:$\theta_{max}$
+\_form#96=37x16:$t_{burn}$
+\_form#97=35x16:$T_{msl}$
+\_form#98=72x19:$G_{limit,msl}$
+\_form#99=14x14:$G$
+\_form#100=217x19:$ p = x(i) + a (x(i+1)-x(i)) $
+\_form#101=35x19:$(i,a)$
+\_form#102=131x19:$ dz/dt=Az+Bv $
+\_form#103=182x21:$ J=\int (z^T Q z + v^T R v) dt $
+\_form#104=128x16:$ v=-R^{-1} B^T P z $
+\_form#105=14x14:$ P $

@@ -1,0 +1,22 @@
+{
+    "Rule-Fixed":{
+        "userModuleID":"RuleBased",
+        "args":{"type":"Fixed"},
+        "logName":"Rule-Fixed"
+    },
+    "Rule-Random":{
+        "userModuleID":"RuleBased",
+        "args":{"type":"Random"},
+        "logName":"Rule-Random"
+    },
+    "HandyRLSample01S":{
+        "userModuleID":"HandyRLSample01S",
+        "args":{"weightPath":"./Learner-latest.pth"},
+        "logName":"HandyRLSample01S"
+    },
+    "HandyRLSample01M":{
+        "userModuleID":"HandyRLSample01M",
+        "args":{"weightPath":"./Learner-latest.pth"},
+        "logName":"HandyRLSample01M"
+    }
+}

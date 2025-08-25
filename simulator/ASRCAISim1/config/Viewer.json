@@ -1,0 +1,50 @@
+{"Factory":{"Viewer":{
+	"None":{
+		"class":"Viewer",
+		"config":{
+			"interval":{
+				"unit":"time",
+				"value":0.1
+			}
+		}
+	},
+	"DefaultMRMGod":{
+		"class":"GodView",
+		"config":{
+			"interval":{
+				"unit":"time",
+				"value":0.1
+			}
+		}
+	},
+	"DefaultSRMGod":{
+		"class":"GodView",
+		"config":{
+			"interval":{
+				"unit":"time",
+				"value":0.1
+			},
+			"panelConfig":{
+				"horizontalUnit": "m",
+				"Default":{
+					"grid":{
+						"scale":[5000.0, 5000.0, 4000.0]
+					},
+					"fighter":{
+						"Default":{
+							"symbol": {
+								"size": 1000.0
+							},						
+							"lock-on range":{
+								"visibility":true
+							},
+							"radar coverage":{
+								"visibility":false
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}}}

@@ -1,0 +1,25 @@
+/**
+ * Copyright (c) 2021-2025 Air Systems Research Center, Acquisition, Technology & Logistics Agency(ATLA)
+ * @file
+ * 
+ * @brief Entityを生成するときに一つのjsonに引数をまとめて渡す場合のフォーマットに関する説明
+ */
+{
+    "isEpisodic":bool, // 寿命を現在のエピソードに紐付けるかどうか
+    "baseName": str, // Factoryにおけるグループ名(base name)
+    "className": str, // クラス名。モデル名と同時に与えた場合はモデルのクラス指定を上書きする。
+                      // キーは"class"としてもよい。
+    "modelName": str, // 他のモデルを継承する場合はモデル名を与える。
+                      // キーは"model"としてもよい。
+    "modelConfig": dict, // model configの中身。クラス・モデルごとに固有のフォーマットを持つ。
+                         // モデル名と同時に与えた場合はそのmodel configに対するmerge patchとして働く。
+                         // キーは"config"としてもよい。
+    "instanceConfig": dict, // instance configの中身。クラス・モデルごとに固有のフォーマットを持つ。
+
+    // 以下のキーは明示的に指定したい場合のみ記述する。
+    "entityIdentifier": dict, // EntityIdentifierを指定したい場合のみ、それを表すdictを記述する。
+    "entityFullName": str, // full nameを指定したい場合のみ指定する。
+    "uuid": str, // UUIDを指定したい場合のみ、それを表す文字列を記述する。
+    "uuidForAccessor": str, // UUIDForAccessorを指定したい場合のみ、それを表す文字列を記述する。
+    "uuidForTrack": str, // UUIDForTrackを指定したい場合のみ、それを表す文字列を記述する。
+}

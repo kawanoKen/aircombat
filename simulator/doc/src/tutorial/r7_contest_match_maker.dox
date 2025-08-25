@@ -1,0 +1,55 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_r7_contest_match_maker 第4回空戦AIチャレンジ向けのMatchMaker
+
+第4回空戦AIチャレンジのシナリオに合わせた対戦管理を行うMatchMakerクラスが、
+[R7ContestModels](\ref mainpage_R7ContestModels)プラグインに
+[R7ContestTwoTeamCombatMatchMaker](\ref R7ContestModels.R7ContestTwoTeamCombatMatchMaker.R7ContestTwoTeamCombatMatchMaker)クラスとして提供されている。
+
+このページではその概要について説明する。
+
+このクラスの基底クラスである[MatchMaker](\ref page_MatchMaker_MatchMaker)クラスと、
+[TwoTeamCombatMatchMaker](\ref page_MatchMaker_TwoTeamCombatMatchMaker)クラスの
+説明もあわせて参照されたい。
+
+# configの追加要素 {#section_r7_contest_match_maker_config}
+
+```python
+config.update({
+    "initial_state_number": int, # 初期状態を生成するAsset数。(今回は4+1で5)
+    "youth": bool, # ユース部門の場合にtrueとする。
+    "asset_spec_randomization": bool, # 機体性能をランダム化する場合にtrueとする。(youth==Falseのときのみ有効)
+    "symmetric_randomization": bool, # 機体性能を両陣営で対象となるようにランダム化するかどうか。オープン部門の設定はTrue
+    "heterogeneous_randomization": bool, # 機体性能を陣営内でバラバラにランダム化するかどうか。オープン部門の設定はTrue
+    "randomized_asset_spec": { # 各機体性能の変動範囲
+        "rcs_scale": [float,float], # RCSスケール
+        "radar_range": [float,float], # レーダ探知距離(基準値からの倍率で指定)
+        "radar_coverage": [float,float], # レーダ探知覆域(正面からの角度で指定)
+        "maximum_speed": [float,float], # 機体最大速度(基準値からの倍率で指定)
+        "num_missiles": [int,int], # 初期誘導弾数
+        "missile_thrust": [float,float], # 誘導弾推力(基準値からの倍率で指定)
+        "shot_approval_delay": [float,float], # 射撃承認までの遅延時間(秒で指定)
+    }
+})
+```
+
+# 機体性能のランダム化(オープン部門向け) {#section_r7_contest_match_maker_randomization}
+
+[setCommonCondition](\ref R7ContestModels.R7ContestTwoTeamCombatMatchMaker.R7ContestTwoTeamCombatMatchMaker.setCommonCondition)
+から呼び出される
+[setFactoryModel](\ref R7ContestModels.R7ContestTwoTeamCombatMatchMaker.R7ContestTwoTeamCombatMatchMaker.setFactoryModel)関数に、
+configで与えられた変動範囲内で機体性能をランダム化する機能を設けている。
+
+# 護衛対象機を含めたManager初期配置の設定  {#section_r7_contest_match_maker_initial_state}
+
+[setInitialState](\ref R7ContestModels.R7ContestTwoTeamCombatMatchMaker.R7ContestTwoTeamCombatMatchMaker.setCommonCondition)
+関数のオーバーライドにより、第4回空戦AIチャレンジのシナリオに沿った初期配置が生成できるようになっている。
+
+護衛対象機の初期配置はカスタマイズの対象外となっているが、
+戦闘機の初期配置は親クラスと同様に"initial_state_lower"と"initial_state_upper"の設定によりカスタマイズ可能になっている。
+
+*/
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "interval":{
+        "unit":"time",
+        "value":0.1
+    },
+    "win":2.0,
+    "lose":-2.0,
+    "draw":0.0
+}

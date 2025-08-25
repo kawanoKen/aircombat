@@ -1,0 +1,68 @@
+{"Factory":{
+    "Ruler":{
+        "R7ContestRuler":{
+            "class":"BasicAirToAirCombatModels01.BasicAACRuler01",
+            "config":{
+                "interval":{
+                    "unit":"time",
+                    "value":1.0
+                },
+                "maxTime":1200,
+                "minTime":100,
+                "dLine":125000,
+                "dOut":75000,
+                "hLim":20000,
+                "westSider":"Red",
+                "eastSider":"Blue",
+                "pDisq": -10,
+                "pBreak": 0.0,
+                "pHit": {
+                    "Default":0.0,
+                    "R7ContestOpenEscorted":1.0,
+                    "R7ContestYouthEscorted":1.0
+                },
+                "pCrash": {
+                    "Default":0.0,
+                    "R7ContestOpenEscorted":1.0,
+                    "R7ContestYouthEscorted":1.0
+                },
+                "pAlive": {
+                    "Default":0.0,
+                    "R7ContestOpenEscorted":0.0,
+                    "R7ContestYouthEscorted":0.0
+                },
+                "pAdv": 0.0,
+                "pOut": 0.0,
+                "applyDOutBeyondLine":true,
+                "pHitPerAircraft": true,
+                "pCrashPerAircraft": true,
+                "pAlivePerAircraft": true,
+                "enableAdditionalTime": false,
+                "terminalAtElimination": true,
+                "terminalAtBreak": false,
+                "considerFuelConsumption": false,
+                "fuelMargin": 0.0,
+                "distanceFromBase": {
+                    "Red":0.0,
+                    "Blue":0.0
+                },
+                "modelNamesToBeConsideredForBreak": {
+                    "Red":[],
+                    "Blue":[]
+                },
+                "modelNamesToBeExcludedForBreak": {
+                    "Red":[],
+                    "Blue":[]
+                },
+                "modelNamesToBeConsideredForElimination": {
+                    "Red":["R7ContestOpenEscorted","R7ContestYouthEscorted"],
+                    "Blue":["R7ContestOpenEscorted","R7ContestYouthEscorted"]
+                },
+                "modelNamesToBeExcludedForElimination": {
+                    "Red":[],
+                    "Blue":[]
+                }
+            }
+        }
+    }
+}}

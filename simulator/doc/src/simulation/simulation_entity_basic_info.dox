@@ -1,0 +1,104 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_entity_basic_info Entity の基本仕様
+
+# Entity 及び派生クラスの共通コンストラクタ {#section_simulation_entity_creation_Entity_constructor}
+
+Entity 及びその派生クラスのコンストラクタは、
+[モデル](\ref section_class_model_policy)としてのパラメータセットを表すmodelConfigと、
+インスタンス固有のパラメータセットを表すinstanceConfigという二つのjson型変数を持つものとしている。
+
+# Entity インスタンスの初期化処理 {#section_simulation_entity_creation_initialization}
+
+Entity インスタンスの初期化処理はなるべく、コンストラクタではなく、
+メンバ関数[initialize](\ref Entity::initialize())の中に記述すること。
+
+また、他の Entity インスタンスを初期化処理中に生成したい場合は、
+メンバ関数[makeChildren](\ref Entity::makeChildren())の中に記述すること。
+
+なお、シミュレーション初期化処理中のインスタンス生成順序は不定であるため、
+もし他の Entity に依存するような初期化処理が必要な場合は、メンバ関数[validate](\ref Entity::validate())の中に記述すること。
+
+# 処理周期の指定 {#section_simulation_entity_period}
+
+## Asset の処理周期 {#section_simulation_entity_period_Asset}
+
+各 Asset モデルは、perceive,control,behave の処理周期を modelConfig で指定することが可能であり、
+その記述方法は以下のとおりである。
+また、 Agent については上記3種類の処理に加えて、step関数をreturnして外部とObservationとActionをやり取りする周期を指定することが可能である。
+
+```
+{
+    "firstTick": { # 初回処理タイミングに関する指定
+        "unit": "tick" or "time", # "tick"の場合はシミュレーションtickで直接指定する。
+                                  # "time"の場合はシミュレーション開始時点からの経過時刻(elapsedTime)で指定し、最も近いtickに変換される。
+                                  # 省略時は"tick"となる。
+        "perceive": Union[double,int], # perceiveの初回処理タイミング。省略時は1[tick]相当となる。
+                                       # reset時の初回perceiveは全Asset共通であり、ここでは無視する。
+        "control": Union[double,int], # controlの初回処理タイミング。省略時は0となる。
+        "behave": Union[double,int], # behaveの初回処理タイミング。省略時は0となる。
+    },
+    "interval": { # 処理周期に関する指定
+        "unit": "tick" or "time", # "tick"の場合はシミュレーションtickで直接指定する。
+                                  # "time"の場合はシミュレーション開始時点からの経過時刻(elapsedTime)で指定し、最も近いtickに変換される。
+                                  # 省略時は"tick"となる。
+        "perceive": Union[double,int], # perceiveの処理周期。省略時は1[tick]相当となる。
+        "control": Union[double,int], # controlの処理周期。省略時は1[tick]相当となる。
+        "behave": Union[double,int], # behaveの処理周期。省略時は1[tick]相当となる。
+        "step": Union[double,int], # step関数をreturnしてObservationとActionをやり取りする初回タイミングを表す。
+                                   # Agent のみ指定する。省略時は SimulationManager::defaultAgentStepInterval となる。
+    },
+}
+```
+
+## Callback の処理周期 {#section_simulation_entity_period_Callback}
+
+各 Callback モデルは、　onInnerStepBegin/End の処理周期を instanceConfig 又は modelConfig で指定することが可能であり、
+その記述方法は以下のとおりである。
+
+```
+{
+    "firstTick": { # 初回処理タイミングに関する指定
+        "unit": "tick" or "time", # "tick"の場合はシミュレーションtickで直接指定する。
+                                  # "time"の場合はシミュレーション開始時点からの経過時刻(elapsedTime)で指定し、最も近いtickに変換される。
+                                  # 省略時は"tick"となる。
+        "value": Union[double,int], # onInnerStepBegin/Endの初回処理タイミング。省略時は0となる。
+    },
+    "interval": { # 処理周期に関する指定
+        "unit": "tick" or "time", # "tick"の場合はシミュレーションtickで直接指定する。
+                                  # "time"の場合はシミュレーション開始時点からの経過時刻(elapsedTime)で指定し、最も近いtickに変換される。
+                                  # 省略時は"tick"となる。
+        "value": Union[double,int], # perceiveの処理周期。省略時は1[tick]相当となる。
+    },
+}
+```
+
+# 処理順序の指定 {#section_simulation_entity_dependency}
+
+同時刻に複数の Entity (Asset 又は Callback) が処理を行うこととなった場合の優先順位は、
+SimulationManager がメンバ変数
+[asset_dependency_graph](\ref SimulationManager::asset_dependency_graph)や
+[callback_dependency_graph](\ref SimulationManager::callback_dependency_graph)等によって管理している。
+
+二つの Entity の処理順序に関する依存関係は、
+Entity 側から[setDependency](\ref Asset::setDependency)関数内で
+[SimulationManagerのAccessor](\ref section_simulation_accessor_SimulationManager)の
+以下のメンバ関数を呼び出すことで追加することができる。
+
+- addDependency
+    [Agent以外のAsset用](\ref SimulationManagerAccessorForPhysicalAsset::addDependency)
+    又は[Callback用](\ref SimulationManagerAccessorForCallback::addDependency)
+- removeDependency
+    [Agent以外のAsset用](\ref SimulationManagerAccessorForPhysicalAsset::removeDependency)
+    又は[Callback用](\ref SimulationManagerAccessorForCallback::removeDependency)
+- addDependencyGenerator
+    [Agent以外のAsset用](\ref SimulationManagerAccessorForPhysicalAsset::addDependencyGenerator)
+    又は[Callback用](\ref SimulationManagerAccessorForCallback::addDependencyGenerator)
+
+詳細はFighter::setDependency の実装を参考とされたい。
+
+*/
+    }
+}

@@ -1,0 +1,17 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_core_plugins core plugin
+
+\section section_core_plugin core pluginの一覧
+
+- [HandyRLUtility](\ref mainpage_HandyRLUtility)…HandyRL(を改変したもの)を用いて学習を行うためのプラグイン
+- [MatchMaker](\ref mainpage_MatchMaker)…複数の行動判断を切り替えながら対戦の実行を行うためのプラグイン
+- [rayUtility](\ref mainpage_rayUtility)…ray RLlibを用いて学習を行うためのプラグイン
+- [Supervised](\ref mainpage_Supervised)…補助タスクを併用して学習を行うためのプラグイン
+- [torch_truncnorm](\ref mainpage_torch_truncnorm)…PyTorchで切断ガウス分布を用いるためのプラグイン
+
+*/
+    }
+}

@@ -1,0 +1,228 @@
+actionDistributionClassGetter: actionDistributionClassGetter
+use_lstm: true
+lstm_cell_size: 256
+lstm_num_layers: 1
+lstm_dropout: 0.2
+image:
+    layers:
+        - ["Conv2d",{"kernel_size": 7,"out_channels": 32,"padding": 3,"stride": 2}]
+        - ["BatchNorm2d",{}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Conv2d",{"kernel_size": 3,"out_channels": 32,"padding": 1}],
+                ["BatchNorm2d",{}],
+                ["ReLU",{}],
+                ["Conv2d",{"kernel_size": 3,"out_channels": 32,"padding": 1}],
+                ["BatchNorm2d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["Conv2d",{"kernel_size": 4,"out_channels": 64,"padding": 1,"stride": 2}]
+        - ["BatchNorm2d",{}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Conv2d",{"kernel_size": 3,"out_channels": 64,"padding": 1}],
+                ["BatchNorm2d",{}],
+                ["ReLU",{}],
+                ["Conv2d",{"kernel_size": 3,"out_channels": 64,"padding": 1}],
+                ["BatchNorm2d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["Conv2d",{"kernel_size": 4,"out_channels": 128,"padding": 1,"stride": 2}]
+        - ["BatchNorm2d",{}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Conv2d",{"kernel_size": 3,"out_channels": 128,"padding": 1}],
+                ["BatchNorm2d",{}],
+                ["ReLU",{}],
+                ["Conv2d",{"kernel_size": 3,"out_channels": 128,"padding": 1}],
+                ["BatchNorm2d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["AdaptiveAvgPool2d",{"output_size": 1}]
+        - ["Flatten",{}]
+common:
+    layers:
+        - ["Linear",{"out_features": 16}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 16}],
+                ["BatchNorm1d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 16}],
+                ["BatchNorm1d",{}]
+            ]}]
+parent:
+    layers:
+        - ["Linear",{"out_features": 64}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+friend:
+    layers:
+        - ["Linear",{"out_features": 64}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+enemy:
+    layers:
+        - ["Linear",{"out_features": 64}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+friend_missile:
+    layers:
+        - ["Linear",{"out_features": 64}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+enemy_missile:
+    layers:
+        - ["Linear",{"out_features": 64}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+        - ["ReLU",{}]
+        - ["ResidualBlock",{
+            "layers":[
+                ["Linear",{"out_features": 64}],
+                ["BatchNorm1d",{}]
+            ]}]
+entity_equivariant:
+    type: SetTransformer
+    layers:
+        - ["ISAB",{"num_heads": 4,"num_inds": 16}]
+        - ["ISAB",{"num_heads": 4,"num_inds": 16}]
+    #type: TransformerEncoder
+    #layers:
+    #    - ["TransformerEncoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+    #    - ["TransformerEncoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+entity_invariant:
+    type: SetTransformer
+    layers:
+        - ["ISAB",{"num_heads": 4,"num_inds": 16}]
+        - ["PMA",{"num_heads": 4,"num_seeds": 1}]
+    #type: TransformerDecoder
+    #layers:
+    #    - ["TransformerEncoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+    #    - ["TransformerDecoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+merge:
+    layers:
+        - ["ReLU",{}]
+        - ["Linear",{"out_features": 256}]
+        - ["ReLU",{}]
+        - ["Linear",{"out_features": 256}]
+        - ["ReLU",{}]
+apply_merged_to_entity:
+    #type: SetTransformerWithQuery
+    #layers:
+    #    - ["ISAB",{"num_heads": 4,"num_inds": 16}]
+    #    - ["ISAB",{"num_heads": 4,"num_inds": 16}]
+    #    - ["PMAWithQuery",{"num_heads": 4}]
+    type: TransformerDecoder
+    layers:
+        - ["TransformerEncoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+        - ["TransformerEncoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+        - ["TransformerDecoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+        - ["TransformerDecoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+critic:
+    value: # 終了時の勝敗(±1)を割引率1で用いる本家HandyRL固有のcriticブランチ(NNにブランチを作らなければ無視される)
+        layers:
+            - ["Linear",{"out_features": 64}]
+            - ["ReLU",{}]
+            - ["Linear",{"out_features": 64}]
+            - ["ReLU",{}]
+    return: # 環境側の本来の即時報酬を、yamlで指定した割引率で用いる通常のcriticブランチ(NNにブランチを作らなければ無視される)
+        layers:
+            - ["Linear",{"out_features": 64}]
+            - ["ReLU",{}]
+            - ["Linear",{"out_features": 64}]
+            - ["ReLU",{}]
+actor:
+    turn:
+        apply_mask: True
+        layers:
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+    pitch:
+        apply_mask: True
+        layers:
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+    accel:
+        apply_mask: True
+        layers:
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+    target:
+        apply_mask: True
+        type: TransformerDecoder
+        layers:
+            #- ["TransformerEncoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+            - ["TransformerDecoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+            - ["TransformerDecoderLayer",{"nhead": 4,"dim_feedforward": 16,"dropout": 0.1,"batch_first": true}]
+    shotInterval:
+        apply_mask: True
+        layers:
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+    shotThreshold:
+        apply_mask: True
+        layers:
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]
+            - ["Linear",{"out_features": 32}]
+            - ["ReLU",{}]

@@ -1,0 +1,305 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_config_dispatcher ConfigDispatcher によるjson object の再帰的な変換
+
+本シミュレータは、config として与えた json から確率による選択や並び替え、要素の複製や別名参照による置換等を経て、
+複雑な登場物の生成を記述しやすくするための ConfigDispatcher クラスを実装している。
+
+ConfigDispatcher クラスそのものの機能は json を与えると一定の規則に従って再帰的に変換を行い、
+一つの json を生成するというものである。
+
+ConfigDispatcher の変換対象物及び生成物となる json の記述方法は以下の通りであり、
+初期化の際は alias として登録したい変換対象物又は生成物を列挙した object を与える。
+変換の実行は ConfigDispatcher のメンバ変数 [run](\ref ConfigDispatcher::run) に生成元 json を引数として与えることで行う。
+
+# ConfigDispatcherの使用方法 {#section_simulation_config_dispatcher_usage}
+
+ConfigDispatcher のコンストラクタにはjson objectを与える。
+この引数の各要素は、メンバ変数aliasesに格納され、展開時に"alias"として参照される。
+
+値を生成する際には ConfigDispatcher::run に json を引数として呼び出すと、後述の仕様に従って展開された結果が得られる。
+
+# 再帰的な展開の仕様 {#section_simulation_config_dispatcher_dispatch}
+
+元となるjsonを j として、以下のように展開される。
+
+1. 基本展開
+    - j["type"]=="direct"の場合
+
+        j["value"]を生成物として返す。
+
+        例えば、
+        ```
+        {
+            "type": "direct",
+            "value": [1,2,3]            
+        }
+        ```
+        は
+        ```
+        [1,2,3]
+        ```
+        となる。
+
+    - j["type"]=="alias"の場合
+
+        j["alias"]に記述された文字列をキーとして、
+        自身の属する ConfigDispatcher インスタンスのメンバ変数[aliases](\ref ConfigDispatcher::aliases)
+        に登録されているjsonを検索し、その値をコピーして再帰的に展開した結果を生成物として返す。
+
+        例えば、aliasesに"foo"という名前で
+        ```
+        {
+            "type": "direct",
+            "value": [1,2,3]            
+        }
+        ```
+        が登録されていた場合、
+        ```
+        {
+            "type": "alias",
+            "alias": "foo"
+        }
+        ```
+        は再帰的に展開されて
+        ```
+        [1,2,3]
+        ```
+        となる。
+
+    - j["type"]=="choice"の場合
+
+        j["weights"]で与えられた重みに従い、
+        j["candidates"]で与えられた要素から一つ選択して再帰的に展開し、その生成結果を生成物として返す。
+        
+        例えば、
+        ```
+        {
+            "type": "choice",
+            "weights": [0.2,0.3,0.5],
+            "candidates": [
+                {
+                    "type": "direct",
+                    "value": 1
+                },
+                {
+                    "type": "direct",
+                    "value": true
+                },
+                {
+                    "type": "direct",
+                    "value": "abc"
+                },
+            ]
+        }
+        ```
+        は20%の確率で1、30%の確率でtrue、50%の確率で"abc"となる。
+
+    - j["type"]=="group"の場合
+        - j["elements"]が与えられた場合
+            j["elements"]で与えられた要素を、
+            j["order"]=="fixed"のときはそのままの順序で、j["order"]=="shuffled"のときはランダムに並び替えて、
+            j["names"]で与えられたキーに対応付けたobjectとして生成する。
+
+            "order"を省略した場合は"fixed"とみなし、
+            "names"を省略した場合は、先頭から順に"Element1", "Element2",...のように命名される。
+
+            例えば、
+            ```
+            {
+                "type": "group",
+                "order": "fixed",
+                "names": ["foo","bar"],
+                "elements":[
+                    {
+                        "type": "direct",
+                        "value": 123
+                    },
+                    {
+                        "type": "direct",
+                        "value": "abc"
+                    }
+                ]
+            }
+            ```
+            は
+            ```
+            {
+                "foo": 123,
+                "bar": "abc"
+            }
+            ```
+            となる。
+        - j["elements"]が与えられなかった場合
+            "elements"と"names"を与える代わりの書き方として、
+            jの要素としてnameとelementの組を列挙してもよい。
+            "type"以外のjの全要素を"names"と"elements"に自動的に追加して展開を行う。
+
+            例えば、
+            ```
+            {
+                "type": "group",
+                "A": {
+                    "type": "direct",
+                    "value": 123
+                },
+                "B": {
+                    "type": "direct",
+                    "value": true
+                }
+            }
+            ```
+            は
+            ```
+            {
+                "type": "group",
+                "names": ["A","B"],
+                "elements": [
+                    {
+                        "type": "direct",
+                        "value": 123
+                    },
+                    {
+                        "type": "direct",
+                        "value": true
+                    }
+                ]
+            }
+            ```
+            と等価なものと解釈される。
+
+    - j["type"]=="concatenate"の場合
+
+        j["elements"]で与えられた各要素について再帰的に展開し、
+        その生成結果を結合して一つのj["type"]=="group"相当のobjectを生成する。
+        
+        このとき、j["elements"]の各要素を展開した結果をsubとして、
+        subの"type"によって結合方法が以下のように変わる。
+        - "group"の場合
+            subの各要素(キーと値の組)をそのまま結合結果に加える。
+        - それ以外の場合
+            これまでに結合された要素数をNとして、
+            キーを"Element"+str(N+1)、値をsubとして結合結果に加える。
+
+        例えば、
+        ```
+        {
+            "type": "concatenate",
+            "elements": [
+                {
+                    "type": "group",
+                    "order": "fixed",
+                    "names": ["foo","bar"],
+                    "elements":[
+                        {
+                            "type": "direct",
+                            "value": 123
+                        },
+                        {
+                            "type": "direct",
+                            "value": "abc"
+                        }
+                    ]
+                },
+                {
+                    "type": "direct",
+                    "value": true
+                }
+            ]
+        }
+        ```
+        は
+        ```
+        {
+            "foo": 123,
+            "bar": "abc",
+            "Element3": true
+        }
+        ```
+        となる。
+
+    - j["type"]=="broadcast"の場合
+
+        j["element"]で与えられたarrayの要素をj["number"]個複製し、
+        j["names"]にstrのarrayとして与えられた名称と対応付けて、
+        j["type"]=="group"相当のobject(dict)を生成する。
+
+        "names"を省略した場合は、先頭から順に"Element1", "Element2",...のように命名される。
+
+        また、j["dispatchAfterBroadcast"]がtrueのときは複製してから各要素を展開し、
+        falseのときは先に展開してから複製を行う。省略時はfalseとみなす。
+
+        例えば、
+        ```
+        {
+            "type": "broadcast",
+            "number": 3,
+            "names":["A","B","C"],
+            "element": {
+                "type": "choice",
+                "weights": [0.2,0.3,0.5],
+                "candidates": [
+                    {
+                        "type": "direct",
+                        "value": 1
+                    },
+                    {
+                        "type": "direct",
+                        "value": true
+                    },
+                    {
+                        "type": "direct",
+                        "value": "abc"
+                    },
+                ]
+            }
+            "dispatchAfterBroadcast": true
+        }
+        ```
+        は"element"を先に展開してから複製するため、
+        ```
+        {"A":1,"B":1,"C":1}             # 20%
+        {"A":true,"B":true,"C":true}    # 30%
+        {"A":"abc","B":"abc","C":"abc"} # 50%
+        ```
+        となる。
+
+    - j["type"]=="none"の場合
+
+        空っぽの要素を表す。最終生成物からは削除されるが、
+        例えば"choice"において「何も選ばない」ということを表現するために用いる。
+
+    - j["type"]が上記のいずれでもない場合
+
+        jそのものを生成物として返す。
+
+    - jが"type"キーを持たない、又はobject(dict)ではない場合
+
+        jそのものを生成物として返す。
+
+2. instance の指定による展開済要素の取得
+
+    jが"instance"キーを持っていた場合、
+    今までに j["instance"] 一致する名前を持つ生成物が生成されていた場合、
+    新たな基本展開は行わず、既存の生成物を返す。
+
+    未生成だった場合は、通常の基本展開を行った結果を返す。
+
+3. index の指定による要素抽出
+
+    jが"index"キーを持っていた場合、
+    jの基本展開を行った結果が"type"=="group"であれば、
+    j["index"]番目の値のみを返す。
+    "type"!="group"ならば無視される。
+
+4. overrider の指定による生成結果の上書き
+
+    jが"overrider"キーを持っていた場合、
+    jの基本展開結果をbase、j["overrider"]の展開結果をpatchとして、
+    baseに対してpatchをmerge_patch処理によって上書きする。
+
+*/
+    }
+}

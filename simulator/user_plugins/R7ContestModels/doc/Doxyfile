@@ -1,0 +1,192 @@
+# Copyright (c) 2024-2025 Air Systems Research Center, Acquisition, Technology & Logistics Agency(ATLA)
+
+PROJECT_NAME           = "$(PackageName)"
+
+OUTPUT_DIRECTORY       =
+
+CREATE_SUBDIRS         = NO
+
+OUTPUT_LANGUAGE        = Japanese-en
+
+FULL_PATH_NAMES        = YES
+
+STRIP_FROM_PATH        = $(RepoRoot)
+
+SHORT_NAMES            = YES
+
+PYTHON_DOCSTRING       = YES
+
+ALIASES                =
+
+EXTENSION_MAPPING      = .h=C++ \
+
+MARKDOWN_SUPPORT       = YES
+
+BUILTIN_STL_SUPPORT    = YES
+
+CPP_CLI_SUPPORT        = NO
+
+NUM_PROC_THREADS       = 0
+
+EXTRACT_ALL            = YES
+
+EXTRACT_PRIVATE        = YES
+
+EXTRACT_PRIV_VIRTUAL   = YES
+
+EXTRACT_PACKAGE        = YES
+
+EXTRACT_STATIC         = YES
+
+EXTRACT_LOCAL_CLASSES  = YES
+
+HIDE_UNDOC_MEMBERS     = NO
+
+HIDE_UNDOC_CLASSES     = NO
+
+HIDE_FRIEND_COMPOUNDS  = NO
+
+HIDE_IN_BODY_DOCS      = NO
+
+INTERNAL_DOCS          = YES
+
+CASE_SENSE_NAMES       = YES
+
+SORT_MEMBER_DOCS       = NO
+
+SORT_BRIEF_DOCS        = NO
+
+SORT_MEMBERS_CTORS_1ST = YES
+
+LAYOUT_FILE            =
+
+CITE_BIB_FILES         =
+
+INPUT                  = src/main.dox src \
+                         ../include ../src ../$(PackageName) \
+
+RECURSIVE              = YES
+
+EXCLUDE                = ../$(PackageName)/include ../$(PackageName)/thirdParty \
+
+EXCLUDE_SYMLINKS       = NO
+
+EXCLUDE_PATTERNS       =
+
+EXCLUDE_SYMBOLS        =
+
+EXAMPLE_PATH           = $(RepoRoot)
+
+EXAMPLE_PATTERNS       =
+
+EXAMPLE_RECURSIVE      = YES
+
+IMAGE_PATH             = src/image
+
+INPUT_FILTER           =
+
+FILTER_PATTERNS        =
+
+FILTER_SOURCE_FILES    = NO
+
+FILTER_SOURCE_PATTERNS =
+
+SOURCE_BROWSER         = YES
+
+STRIP_CODE_COMMENTS    = NO
+
+CLANG_ASSISTED_PARSING = NO
+
+GENERATE_HTML          = YES
+
+HTML_OUTPUT            = $(RepoRoot)/doc/html/$(PackageName)
+
+HTML_FILE_EXTENSION    = .html
+
+HTML_HEADER            =
+
+HTML_FOOTER            =
+
+HTML_STYLESHEET        =
+
+HTML_EXTRA_STYLESHEET  = $(RepoRoot)/doc/asrc_doc_stylesheet.css
+
+HTML_EXTRA_FILES       =
+
+HTML_DYNAMIC_MENUS     = YES
+
+HTML_DYNAMIC_SECTIONS  = NO
+
+DISABLE_INDEX          = YES
+
+GENERATE_TREEVIEW      = YES
+
+HTML_FORMULA_FORMAT    = svg
+
+FORMULA_FONTSIZE       = 14
+
+SEARCHENGINE           = YES
+
+GENERATE_LATEX         = NO
+
+LATEX_OUTPUT           = latex
+
+ENABLE_PREPROCESSING   = YES
+
+MACRO_EXPANSION        = YES
+
+EXPAND_ONLY_PREDEF     = NO
+
+SEARCH_INCLUDES        = YES
+
+INCLUDE_PATH           = $(RepoRoot)/ASRCAISim1/include \
+                         $(RepoRoot)/ASRCAISim1/thirdParty/include \
+                         $(RepoRoot)/ASRCAISim1/thirdParty/include/eigen3 \
+                         $(RepoRoot)/ASRCAISim1/thirdParty/include/eigen3/unsupported \
+                         $(Python3_INCLUDE_DIRS) \
+                         $(Python3_Numpy_INCLUDE_DIRS) \
+                         $(RepoRoot)/user_plugins/BasicAirToAirCombatModels01/BasicAirToAirCombatModels01/include \
+
+PREDEFINED             = "__DOXYGEN__" \
+                         "PYBIND11_EXPORT=" \
+                         "__declspec(x)=" \
+                         "__attribute__(x)=" \
+                         "MODULE_NAME=$(PackageName)" \
+                         "ASRC_PLUGIN_NAMESPACE_BEGIN=namespace $(PackageName){" \
+                         "ASRC_PLUGIN_NAMESPACE=$(PackageName)" \
+                         "ASRC_PLUGIN_BII_NAMESPACE_BEGIN=namespace $(PackageName){" \
+                         "ASRC_PLUGIN_BII_NAMESPACE=$(PackageName)" \
+                         "ASRC_BUILD_PLUGIN_BII_PART=1" \
+
+EXPAND_AS_DEFINED      = 
+
+SKIP_FUNCTION_MACROS   = YES
+
+TAGFILES               = $(RepoRoot)/doc/tags/core.tag=../core \
+                         $(RepoRoot)/doc/BasicAirToAirCombatModels01.tag=../BasicAirToAirCombatModels01 \
+
+GENERATE_TAGFILE       = $(RepoRoot)/doc/tags/$(PackageName).tag
+
+EXTERNAL_GROUPS        = NO
+
+EXTERNAL_PAGES         = NO
+
+CLASS_GRAPH            = YES
+
+COLLABORATION_GRAPH    = YES
+
+GROUP_GRAPHS           = YES
+
+TEMPLATE_RELATIONS     = NO
+
+INCLUDE_GRAPH          = YES
+
+INCLUDED_BY_GRAPH      = YES
+
+CALL_GRAPH             = NO
+
+CALLER_GRAPH           = NO
+
+GRAPHICAL_HIERARCHY    = YES
+
+DIRECTORY_GRAPH        = YES

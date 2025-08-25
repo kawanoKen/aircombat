@@ -1,0 +1,111 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_serialization オブジェクトのシリアライゼーション
+
+本シミュレータは、cerealというシリアライゼーションライブラリを用いて、
+各オブジェクトのjsonやバイナリ等との相互変換を実現している。
+
+# 既存オブジェクトへの参照としてのシリアライゼーション {#section_simulation_serialization_json_as_reference}
+
+本シミュレータでは多くの機能で json 形式でのデータ授受を採用しているが、
+json では真偽値、数値、文字列とそのコンテナしか渡せない
+
+本シミュレータではこの制約のもとで参照渡しを実現するために、
+asrc::core::PolymorphicSerializableAsReference<T> を継承してクラスTを実装することで
+shared_ptr<T> と weak_ptr<T> を json と相互変換できるようにしている。
+
+相互変換の処理はクラス T において別途実装する必要があるが、
+例えば Entity や EntityManager クラスは以下のようにUUIDを用いて参照先を特定することとしている。
+
+## 既存の Entity インスタンスへの参照としてのjson表現 {#section_simulation_Entity_as_reference_json}
+
+key |value                              |load時の省略可否
+----|-----------------------------------|----------------
+m   |EntityManager のUUIDを表す文字列    |不可
+e   |Entity のUUIDを表す文字列           |不可
+
+## 既存の EntityManager インスタンスへの参照としてのjson表現 {#section_simulation_EntityManager_as_reference_json}
+
+key |value                              |load時の省略可否
+----|-----------------------------------|----------------
+m   |EntityManager のUUIDを表す文字列    |不可
+
+
+# 値渡しでシリアライゼーションを行うクラス {#section_simulation_serialization_json_as_value}
+
+- NonPolymorphicSerializableAsValue<T>
+
+    多態性が不要なデータ型Tはこれを継承する。
+    [Time](#section_simulation_Time)、
+    [Epoch](#section_simulation_Epoch)、
+    [Coordinate](#section_simulation_Coordinate_Coordinate)、
+    [MotionState](#page_simulation_MotionState)などが該当する。
+
+    そのようなデータ型においては復元時に型情報で迷うことがないため、
+    任意のデータ形式でシリアライゼーションが可能である。
+
+- PolymorphicSerializableAsValue<T>
+
+    多態性が必要なデータ型Tはこれを継承する。[Track3D,Track2D](\ref page_simulation_Track)が該当する。
+
+    復元時には元々どのクラスのオブジェクトだったかを特定する必要があるため、
+    "polymorphic_name"というキーでクラス名の情報を出力しておくこととしている。
+    これ以外のキーについては派生クラスで任意に定めてよい。
+
+    key             |value                   |load時の省略可否
+    ----------------|------------------------|----------------
+    polymorphic_name|実際のクラスの完全修飾名|不可
+
+# 内部状態のシリアライゼーション (Experimental)
+
+本項の機能は未だexperimentalのため、利用は推奨しない。
+ここではごく簡易な概要のみを述べる。
+
+## Entity の内部状態の保存と復元
+
+[serializeInternalState](\ref Entity::serializeInternalState)関数をオーバーライドした Entity クラスは、
+以下のように内部状態の保存と復元が可能である。
+
+単体で使用すると他の Entity との不整合が生じやすいため、
+後述のするように SimulationManager 全体を内部状態の保存と復元を行うような使い方を想定している。
+
+- jsonへの出力と読み込み (Python側)
+
+```python
+j = entity.saveInternalStateToJson(True,{}) #出力
+entity.loadInternalStateFromJson(j, True, {}) #読み込み
+```
+
+- バイナリ(bytes)への出力と読み込み (Python側)
+```python
+b = entity.saveInternalStateToBinary(True,{}) #出力
+entity.loadInternalStateFromBinary(b, True, {}) #読み込み
+```
+
+## SimulationManagerの内部状態の保存と復元
+
+全ての Entity が[serializeInternalState](\ref Entity::serializeInternalState)関数を
+実装済で内部状態の保存と復元に対応している場合、以下のように
+SimulationManager の内部状態の保存と復元が可能であり、特定時点からの再開等が行える。
+
+SimulationManager インスタンスそのものにアクセスできる状況でしか使用できないため、
+基本的にはPython側で実行することを想定している。
+
+- jsonへの出力と読み込み (Python側)
+
+```python
+j = manager.saveInternalStateToJson(True,{}) #出力
+manager.loadInternalStateFromJson(j, True, {}) #読み込み
+```
+
+- バイナリ(bytes)への出力と読み込み (Python側)
+```python
+b = manager.saveInternalStateToBinary(True,{}) #出力
+manager.loadInternalStateFromBinary(b, True, {}) #読み込み
+```
+
+*/
+    }
+}

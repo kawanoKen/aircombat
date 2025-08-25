@@ -1,0 +1,189 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_plugins プラグインについて
+
+本シミュレータは、本体部分である ASRCAISim1 パッケージを中心として、
+プラグインとして様々な機能やモデルを追加できるような構成となっている。
+
+プラグインは独立したパッケージとしてインストールされるものであり、
+Pythonのエントリポイントの機能を用いて検索や読み込みが行われる。
+
+プラグインは、本体の機能拡張としての位置づけを持つ"core plugin"と、
+ユーザ定義モデルの追加としての位置づけを持つ"user plugin"の2種類に分類される。
+
+本シミュレータに同梱されているプラグインの一覧は以下のリンク先のとおり。
+
+- \subpage page_core_plugins
+- \subpage page_user_plugins
+
+# プラグインのインポート {#section_plugin_import}
+
+## core pluginのインポート {#section_plugin_core_plugin_import}
+
+デフォルトでは、core pluginは本体部分のインポートと同時にインポートされる。
+この自動インポートは、環境変数で"ASRCAISim1_disable_automatic_import_of_core_plugins"=1とすることで無効化できる。
+
+また、core pluginは本体部分と透過的にマージされているように呼び出すことも可能である。
+例えば、AAAというcore pluginがあった場合、通常はAAA.BBBとして参照されるオブジェクトは、
+ASRCAISim1.BBBという形で本体部分のattributeとしても参照可能となっている。
+
+あるいは、ASRCAISim1.plugins.AAA.BBBという形でプラグイン名を明示した参照も可能であり、
+当然ながら単にAAA.BBBという直接参照も可能である。
+
+## user pluginのインポート {#section_plugins_user_plugin_import}
+
+user_pluginはユーザ自身が明示的にインポートする必要がある。
+ただし、[Factoryによるクラス・モデルの検索](#section_simulation_Factory_resolveModelConfig)が行われる際には、
+"PluginName.ClassName"のような形で"."区切りでクラス名等を指定していれば該当するプラグインが自動的にインポートされる。
+
+
+# C++側の名前空間 {#section_plugins_namespace}
+
+本シミュレータにおけるC++側の名前空間の命名規則は以下の通りである。
+
+本体部分及びcore pluginは asrc::core 名前空間を用いる。
+
+user pluginはプラグイン名(=パッケージ名)と同名の名前空間を用いる。
+ソースコード中では、 ASRC_PLUGIN_NAMESPACE_BEGIN と ASRC_PLUGIN_NAMESPACE_END
+という2つのマクロで囲むことで自動的に適切な名前空間が設定される。
+
+# プラグインの作成方法 {#section_plugin_creation}
+
+sample/modules以下に、二つのひな形を同梱しているので、これらをベースに
+独自のソースコードを追加していくことを推奨する。
+
+- [cpp_template](\ref mainpage_cpp_template)…C++を用いて独自プラグインを作成するためのひな形。Pythonクラスも追加可能。
+- [py_template](\ref mainpage_py_template)…Pythonのみを用いて独自プラグインを作成するためのひな形
+
+## 依存パッケージ、プラグインの追加 {#section_plugins_add_dependency}
+
+### 外部Pythonパッケージの追加 {#section_plugins_add_third_party_python_dependency}
+
+外部Pythonパッケージに依存する場合は、
+ビルド時に必要なものはpyproject.tomlの[build-system]ブロックのrequiresに、
+インストール後の使用時に必要なものはpyproject.tomlの[project]ブロックのdependenciesに書く。
+```toml
+[build-system]
+requires =[
+    "YourDependencyInBuild"
+]
+[project]
+dependencies=[
+    "YourDependencyInUse"
+]
+```
+
+### 本シミュレータのプラグインの追加 {#section_plugins_add_plugin_dependency}
+
+本シミュレータの他のプラグインに依存する場合は、
+ビルド時に必要なものはpyproject.tomlの[build-system]ブロックのrequiresに、
+インストール後の使用時に必要なものはpyproject.tomlの[project]ブロックのdependenciesに書く。
+
+さらに、pyproject.tomlの[tool.ASRCAISim1]ブロックにおいて、
+依存プラグインがcore pluginの場合はcore-pluginsに追記し、
+user pluginの場合はuser-pluginsに追記する。
+
+### 外部のC++ライブラリの追加 {#section_plugins_add_third_party_cpp_dependency}
+
+sample/modules/cpp_templateディレクトリにおいて、
+外部のC++ライブラリをビルドして同梱してインストールするひな形を提供している。
+
+このひな形を用いると、プラグインのインストール時に、
+プラグインのパッケージディレクトリ直下にthirdPartyという名前のディレクトリが追加され、
+ここに各ライブラリのビルド結果を格納していく形となる。
+(サブディレクトリ構造は使用するライブラリによって異なる。)
+```bash
+cpp_template
+└thirdParty
+　├include # ヘッダファイルを格納
+　├lib # .soファイルを格納
+　└share/cmake # xxxConfig.cmakeファイルを格納
+```
+
+主に以下のファイルに追記することで外部ライブラリのビルド・インストール処理を記述していく。
+なお、本シミュレータの本体部分も同様の方法で外部ライブラリを使用しているので、記述方法の具体例はそちらを参考にされたい。
+
+- thirdParty/scripts/fetcher.sh
+
+    外部ライブラリのダウンロード処理を記述する。
+    ダウンロード先はthirdParty/deps/を想定している。
+
+- thirdParty/scripts/extractor.sh
+
+    ダウンロードしたファイルの展開処理を記述する。
+    展開先はthirdParty/depsを想定している。
+
+- thirdParty/scripts/builder.sh
+
+    展開したファイルのビルド処理を記述する。
+    ビルドディレクトリは build/[Release|Build]/thirdParty、
+    単体での一時インストール先は build/[Release|Build]/thirdParty/install
+    を想定している。
+
+- thirdParty/scripts/cleaner.sh
+
+    clean時の処理を記述する。
+    ダウンロード・展開したファイルを削除したい場合は削除する。
+    使いまわしたい場合は何も書かなくてもよい。
+
+- CMakeLists.txt
+
+    末尾のコメントアウトされている部分を参考に、
+    外部ライブラリのリンク処理を記述する。
+    ```cmake
+    find_package(a_third_party_package REQUIRED)
+    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
+        a_third_party_package::target
+    )
+    ```
+
+    なお、このひな形では、build/[Release|Build]/thirdParty/install/以下に
+    インストールされたファイルをcpp_template/thirdParty/以下にコピー
+    することで最終生成物を生成する。
+
+- thirdParty/scripts/thirdPartyConfigPath.cmake
+
+    このプラグインをリンクする際に、このプラグインの依存ライブラリもリンクするための
+    cmake configを記述する。
+
+    cpp_template/thirdParty/以下にインストールされたxxxConfig.cmakeを
+    cmakeが見つけられるように、該当するディレクトリを CMAKE_PREFIX_PATH に追加すること。
+
+## core pluginとuser plugin の選択 {#section_plugins_core_and_user}
+
+各プラグインをcore pluginとuser pluginのどちらとして扱うかについては、
+pyproject.tomlの[tool.ASRCAISim1]ブロックにおいて
+"is-core-plugin"オプションをTrue/Falseで指定することで切り替えることができる。
+
+前述のひな形はいずれもuser pluginとしてのひな形であり、もしこれをcore pluginにする場合は、
+名前空間も [これ](\ref section_plugins_namespace) に従うこと。
+
+なお、core pluginは"ASRCAISim1.core_plugins"グループ、user pluginは"ASRCAISim1.user_plugins"グループとして
+エントリポイントが登録される。
+
+## user pluginの複数バージョンを混在させる方法 {#section_plugins_build_identification}
+
+user pluginは、Python環境にインストール可能なバージョンは一つのみであるが、
+他のPythonパッケージのサブパッケージとして配置することで、
+異なるバージョンの同名プラグインを別々に読み込むことが可能となっている。
+
+この機能は、pyproject.tomlの[tool.ASRCAISim1]ブロックにおいて
+"enable-build-identification"オプションをTrueにしてビルドすることで有効化できる。
+
+この機能は、BuildIdentifierというビルドバージョンを表す文字列
+(現バージョンにおいてはビルド日時を用いて"B"+"YYYYmmddHHMMSS"としている)
+によってインポート対象のプラグインを識別することによって実現される。
+
+C++部分のソースコードは名前空間を ASRC_PLUGIN_NAMESPACE_BEGIN と ASRC_PLUGIN_NAMESPACE_END
+という2つのマクロで囲んでいれば、<plugin name>::<BuildIdentifier>という名前空間が自動的に作られ、
+名称の衝突が回避される。
+
+なお、一部分をビルドバージョンに依存しない共通の実装としたい場合には、該当部分の名前空間の開閉マクロを
+ASRC_PLUGIN_BII_NAMESPACE_BEGIN と ASRC_PLUGIN_BII_NAMESPACE_END
+に変更すればよい。
+
+*/
+    }
+}

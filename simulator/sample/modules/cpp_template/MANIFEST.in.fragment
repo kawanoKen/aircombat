@@ -1,0 +1,11 @@
+include sample/modules/{packageName}/MANIFEST.in.fragment
+include sample/modules/{packageName}/builder.sh
+include sample/modules/{packageName}/builder.bat
+include sample/modules/{packageName}/CMakeLists.txt
+include sample/modules/{packageName}/MANIFEST.in.self
+graft sample/modules/{packageName}/{packageName}
+graft sample/modules/{packageName}/include
+graft sample/modules/{packageName}/src
+global-exclude *.pyc
+prune sample/modules/{packageName}/build
+graft sample/modules/{packageName}/thirdParty/scripts

@@ -1,0 +1,69 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_TimeSystem 時刻系の表現について
+
+本シミュレータにおいて、時刻系は以下の7種類を定義しており、 TimeSystem 列挙体として表現する。
+
+値              | 意味
+----------------|---------------
+TT              | Terrestrial Time、地球時 : 天文学で用いられる基準の時刻系。
+TAI             | International Atomic Time、国際原子時 : 原子時計により維持されている時刻系。
+UT1             | Universal Time、世界時 : 地球の自転に対応した時刻系。ECI-ECEFの変換がUT1ベースで定義されるので重要。
+UTC             | Coordinated Universal Time、協定世界時 : 日常的に使用される時刻系。各国の標準時はUTCからの差で定められている。
+GPS             | GPS衛星が使用する時刻系。TAIより19秒遅い。
+JY              | Julian Year、ユリウス年
+JC              | Julian Century、ユリウス世紀
+
+時刻を表す際には上記のいずれかの時刻系で2000-01-01T12:00:00からの経過秒数として管理することとし、その情報を保持するデータ型として Time クラスを用いる。
+また、時刻の文字列表現はISO8601相当のタイムゾーン無し版(YYYYMMDDThhmmss.SSS又はYYYY-MM-DDThh:mm:ss.SSS)を用いることとする。
+
+# Time {#section_simulation_Time}
+
+Time クラスは時刻を表すデータ型であり、時刻系の情報と2000-01-01T12:00:00からの経過秒数の情報を持ち、時刻系の変換や加算・減算に関するメンバ関数を持つ。
+
+ただし、時刻と時間の混同を防止する観点から、double等の数値型との暗黙の変換は認めない。
+
+## Time クラスのjson表現 {#section_simulation_TimeSystem_Time_json}
+
+key         |value                              |load時の省略可否
+------------|-----------------------------------|----------------
+timeSystem  |TimeSystem の値を表す文字列        |可(省略時は TimeSystem::TT )
+value       |2000-01-01T12:00:00からの経過秒数  |可(省略時は0)
+
+# Epoch {#section_simulation_Epoch}
+
+シミュレーションを実行する際には、シミュレーション開始時点の時刻が重要な意味を持つことも多いため、本シミュレータではシミュレーション開始時刻を表すために Epoch クラスを用いる。
+
+Epoch クラスは時刻系間の変換方法も管理しており、staticメンバ変数として各時刻系間の時間差の情報を持っている。
+
+Epoch インスタンスの生成は SimulationManager クラスが行い、
+そのコンストラクタに渡すconfigにおいて"/Manager/Epoch"に以下のようなjson object (dict)として与えるものとする。
+なお、以下の例は省略時のデフォルト値でもある。
+
+```json
+{
+    "Manager": {
+        "Epoch": {
+            "timeSystem": "TT",
+            "datetime": "2000-01-01T12-00-00",
+            "delta_tt_tai": 32.184,
+            "delta_tt_ut1": 67.6439,
+            "delta_ut1_utc": 0.0,
+            "delta_tai_gpu": 19.0
+        }
+    }
+}
+```
+
+## Epoch クラスのjson表現 {#section_simulation_TimeSystem_Epoch_json}
+
+key         |value                              |load時の省略可否
+------------|-----------------------------------|----------------
+timeSystem  |TimeSystem の値を表す文字列        |可(省略時は TimeSystem::TT )
+datetime    |原点時刻を表す文字列               |可(省略時は"2000-01-01T12:00:00")
+
+*/
+    }
+}

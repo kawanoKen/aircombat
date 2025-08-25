@@ -1,0 +1,16 @@
+__pycache__/
+*egg-info/
+build/
+*.lib*
+*.so*
+*.dll*
+*.pyd*
+/MANIFEST.in
+/*/include/
+/*/thirdParty/
+/thirdParty/*
+!/thirdParty/deps/
+/thirdParty/deps/*
+!/thirdParty/scripts/
+*.pyc
+/.vscode

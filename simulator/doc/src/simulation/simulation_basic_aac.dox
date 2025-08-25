@@ -1,0 +1,61 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_basic_aac 基本的な空対空戦闘場面のシミュレーション
+
+このページでは、本シミュレータで基本的な空対空先頭場面を表現する方法の概要を説明する。
+
+#  空対空戦闘場面を構成する Asset {#section_simulation_basic_aac_assets}
+
+このバージョンの本シミュレータで空対空戦闘場面のシミュレーションを行う際、
+Agent が行動判断を行う対象は戦闘機を表す Fighter のみであり、
+場に独立して存在する PhysicalAsset 及び Controller は Fighter のみであるが、
+子 Asset として以下に示すクラスのインスタンスが生成される。
+
+- PhysicalAsset
+    名称(総称として記載)|親となる Asset |概要
+    --------------------|---------------|-------------------
+    Fighter             |なし           |戦闘機
+    AircraftRadar       |Fighter        |戦闘機搭載センサ(レーダ)
+    MWS                 |Fighter        |戦闘機搭載センサ(MWS)
+    Propulsion          |Fighter        |戦闘機用ジェットエンジン
+    Missile             |Fighter        |誘導弾
+    MissileSensor       |Missile        |誘導弾搭載センサ(シーカ)
+- Controller
+    名称(総称として記載)|親となる Asset |概要
+    --------------------|---------------|-------------------
+    SensorDataSharer    |Fighter        |戦闘機のセンサ探知データを編隊内で共有する処理の送信側
+    SensorDataSanitizer |Fighter        |戦闘機のセンサ探知データを編隊内で共有する処理の受信側
+    OtherDataSharer     |Fighter        |戦闘機のセンサ探知データ以外を編隊内で共有する処理の送信側
+    OtherDataSanitizer  |Fighter        |戦闘機のセンサ探知データ以外を編隊内で共有する処理の受信側
+    HumanIntervention   |Fighter        |戦闘機の射撃行為に関する人間の介入を模した処理
+    WeaponController    |Fighter        |人間の介入を受けた後の射撃判断結果に基づく誘導弾発射等の処理
+    FlightController    |Fighter        |戦闘機の飛行制御
+    PropNav             |Missile        |比例航法による誘導弾飛翔制御
+
+# Asset の処理順序 {#section_simulation_basic_aac_assets_dependency}
+
+空対空戦闘の場面に登場する Asset 間の、perceive、control、behave、validate の各処理における
+処理順序の依存関係は下図に示す通りである。
+線で繋がれていないものどうしはどちらを先に処理してもよいものとしている。
+また、図に登場していないクラスは該当する処理を行わないか、依存関係がなく任意の順序で処理可能なものである。
+
+@image html "air_to_air_combat_asset_dependency.png" "各処理における Asset の処理順序の依存関係" width=100%
+
+# 戦闘機モデルの種類 {#section_simulation_basic_aac_Fighter}
+
+現バージョンにおいて戦闘機を表す基底クラスは Fighter クラスとして実装しているが、
+機体の運動に関する部分のみ派生クラスで実装することとしている。
+
+実装場所        |クラス名               |概要
+----------------|-----------------------|-------------------------------
+本体            |SixDoFFighter          |6 自由度の運動方程式で表現し、舵面の操作による姿勢制御を表現したモデル
+本体            |CoordinatedFighter     |横滑り角=0 として、回転運動及び姿勢制御を簡略化したモデル
+本体            |MassPointFighter       |重力や空気力を無視し速度と角速度を一定の範囲で直接操作できるようにしたモデル
+[R7ContestModels](\ref mainpage_R7ContestModels) |[R7ContestMassPointFighter](\ref R7ContestModels::R7ContestMassPointFighter) |迎角と横滑り角を無視し、機体のX軸と速度方向が常に一致するものとして速度ベクトルを直接操作するモデル。速度、加速度、角速度(速度ベクトルの変化率として)を高度依存のテーブルデータとして与える。
+[R7ContestModels](\ref mainpage_R7ContestModels) |[PlanarFighter](\ref R7ContestModels::PlanarFighter)             |[R7ContestMassPointFighter](\ref R7ContestModels::R7ContestMassPointFighter)の運動を特定高度における水平面上に拘束したモデル
+
+*/
+    }
+}

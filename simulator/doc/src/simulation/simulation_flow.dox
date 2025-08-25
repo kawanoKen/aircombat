@@ -1,0 +1,46 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_flow シミュレーションの処理の流れについて
+
+# シミュレーションの処理の流れ {#section_simulation_flow}
+
+　本項では、シミュレーションの処理の流れの概要をまとめる。一般的な gymnasium(旧 OpenAI Gym)
+環境と同じく、本シミュレータの外部から見た場合に各エピソードは初期 Observation を返す [reset](\ref SimulationManager::reset)
+関数から始まり、その後は Action を入力して Observation、Reward、Terminated、Truncated、Info
+の 5 種類の値を返す [step](\ref SimulationManager::step) 関数を繰り返す。なお、本シミュレータ及び各種サンプルでは
+Terminated と Truncated を区別せず、旧 OpenAI gym 環境における Done と同等の扱いをしており、全ての [Agent](\ref section_simulation_entity_Agent)
+に対する Done が True となった時点でエピソードが終了する。[Asset](\ref section_simulation_entity_Asset) と[ポリシー](\ref section_class_model_policy)
+に関するエピソード中の処理フローは下図の通りである。
+
+@image html "simulation_flow.png" "シミュレーション中の処理の流れ(行動判断に関するもののみ)" width=100%
+
+　現時点での実装では、各 [Agent](\ref section_simulation_entity_Agent) の行動判断周期(ポリシーと Observation、Action をやりとりする周期)は
+異なる値を使用してよいものとしており、1 回の [step](\ref SimulationManager::step) 関数で進行する tick 数は
+少なくとも 1 体の [Agent](\ref section_simulation_entity_Agent) の行動判断が行われる時刻までであり、[Agent](\ref section_simulation_entity_Agent) の設定次第では一定ではなくなる。
+また、図中青色で示している [step](\ref SimulationManager::step) 関数内部の時間進行処理は、
+必ずしも全ての [Asset](\ref section_simulation_entity_Asset) が1[tick]ごとに処理を行うものではなく、各 [Asset](\ref section_simulation_entity_Asset) クラスまたはモデルごとに指定された周期で、
+実行すべき時刻が来たときに実行される。
+
+　また、[Callback](\ref section_simulation_entity_Callback) の各処理の実行タイミングは [Callback](\ref section_simulation_entity_Callback) の種類によって異なり、
+下図に示すタイミングで実行される。
+
+@image html "callback_timing.png" "コールバックの処理タイミング" width=100%
+
+# 非周期的なイベントの発生及びイベントハンドラ {#section_simulation_event_handler}
+　本シミュレータでは[上記](\ref section_simulation_flow)で述べた周期的な処理のほかに、
+突発的なイベントを発生させ、それをトリガーとしたイベントハンドラの処理を実行する機能を有している。
+イベントハンドラの登録は任意のイベント名とコールバック関数オブジェクトの組を与えることで行い、
+イベントを発生させる際にはイベント名とイベントハンドラに対する引数の組を与えることで行う。
+イベントハンドラの引数はインターフェース共通化のため、nl::json 型の変数一つとしている。
+例えば、誘導弾の命中時や戦闘機の墜落時の得点増減は [Asset](\ref section_simulation_entity_Asset) からイベントを発生させ
+[Ruler](\ref section_simulation_entity_Ruler) が登録したイベントハンドラを呼ぶことによって実現されている。
+なお、イベントハンドラの登録は [Callback](\ref section_simulation_entity_Callback) からのみ可能であり、
+イベントの発生は [Callback](\ref section_simulation_entity_Callback) 、
+[PhysicalAsset](\ref section_simulation_entity_PhysicalAsset) または
+[Controller](\ref section_simulation_entity_Controller) のいずれかからのみ可能である。
+
+*/
+    }
+}

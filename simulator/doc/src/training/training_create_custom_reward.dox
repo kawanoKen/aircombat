@@ -1,0 +1,101 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_training_create_custom_reward 独自 Reward の実装方法
+
+独自の Reward クラスを実装する場合の大まかな流れは以下の通りである。
+
+1. 陣営単位での報酬とするのか、Agent ごとの報酬とするのかに応じて、TeamReward クラスと
+    AgentReward クラスのいずれかを基底クラスとして継承する。
+
+2. 各種コールバック関数のうち、必要なものをオーバーライドする。
+
+3. 必要に応じてイベントハンドラを定義し、適切な場所(通常は [onEpisodeBegin](\ref Reward::onEpisodeBegin))
+    で [addEventHandler](\ref SimulationManagerAccessorForCallback::addEventHandler)
+    を呼んで SimulationManager に登録する。
+
+4. modelConfig として設定可能とするパラメータを選択し、他の登場物に依存する初期化処理が必要な場合は
+    [validate](\ref Reward::validate)関数もオーバーライドし、初期化処理を記述する。
+
+5. メンバ変数 [reward](\ref Reward::reward)、[totalReward](\ref Reward::totalReward) が適切に計算されているかを確認する。
+
+6. C++で実装した場合、Pybind11 を用いて Python 側へ公開する。
+
+7. Factory へクラスを登録する処理をどのタイミングで実行するかを決定する。
+    インポート時に呼ばれるように記述してもよいし、ユーザーがインポート後に手動で登録するものとしてもよい。
+
+8. json ファイル等を用意し、Factory にモデル登録ができるようにする。
+
+9. 以上により、登録したモデル名を SimulationManager の config["Rewards"]に記述することで独自の Reward が使用可能となる。
+
+Python クラスとして Reward クラスを実装する際のひな形を以下に示す。
+
+```python
+class UserReward(TeamReward):
+    #チーム全体で共有する報酬は TeamReward を継承し、
+    #個別の Agent に与える報酬は AgentReward を継承する。
+    def __init__(self, modelConfig: nljson, instanceConfig: nljson):
+        super().__init__(modelConfig, instanceConfig)
+        if(self.isDummy):
+            return #Factory によるダミー生成のために空引数でのインスタンス化に対応させる
+        #以上 3 行の呼び出しは原則として必須である。
+
+        #また、modelConfig の読み込み等は Agent クラスと共通である。
+
+    def onEpisodeBegin(self):
+        #エピソード開始時の処理(必要に応じてオーバーライド)
+        #基底クラスにおいて config に基づき報酬計算対象の設定等が行われるため、
+        #それ以外の追加処理や設定の上書きを行いたい場合のみオーバーライドする。
+        super().onEpisodeBegin()
+
+    def onStepBegin(self):
+        #step 開始時の処理(必要に応じてオーバーライド)
+        #基底クラスにおいて reward(step 報酬)を 0 にリセットしているため、
+        #オーバーライドする場合、基底クラスの処理を呼び出すか、同等の処理が必要。
+        super().onEpisodeBegin()
+
+    def onInnerStepBegin(self):
+        #インナーステップ開始時の処理(必要に応じてオーバーライド)
+        #デフォルトでは何も行わないが、より細かい報酬計算が必要な場合に使用可能。
+        pass
+
+    def onInnerStepEnd(self):
+        #インナーステップ終了時の処理(必要に応じてオーバーライド)
+        #一定周期で呼び出されるため、極力この関数で計算する方が望ましい。
+
+        for team in self.reward:
+            #team に属している Asset(Fighter)を取得する例
+            for f in self.manager.getAssets(
+                lambda a:a.getTeam()==team and isinstance(a,Fighter)):
+                if(f.isAlive()):
+                    self.reward[team] += 0.1 #例えば、残存数に応じて報酬を与える場合
+
+    def onStepEnd(self):
+        #step 終了時の処理(必要に応じてオーバーライド)
+        #Agent の構成によって呼び出し周期が一定ではないため、極力この関数での計算は
+        #避けた方がよい。ただし、戦闘終了時のみ全 Agent が一律に行動対象になるため、
+        #戦闘終了時の結果を用いて追加報酬を与えたい場合にはこの関数で計算する。
+        ruler = self.manager.getRuler()()
+        if ruler.endReason != ruler.EndReason.NOTYET:
+            #戦闘終了時の追加報酬は Ruler の終了フラグを見て計算する。
+            pass
+
+        #戦闘終了時以外は、manager の agentsToAct を用いてこの step で行動判断対象に
+        #なっている Agent を取得し、計算対象の特定に利用する。
+        for agentFullName, agent in self.manager.agentsToAct:
+            pass
+
+        #また、基底クラスにおいて累積報酬の更新を行っているため、
+        #オーバーライドする場合、基底クラスの処理を呼び出すか、同等の処理が必要。
+        super().onStepEnd()
+
+    def onEpisodeEnd(self):
+        #エピソード終了時の処理(必要に応じてオーバーライド)
+        #デフォルトでは何も行わないが、より細かい報酬計算が必要な場合に使用可能。
+        pass
+```
+
+*/
+    }
+}

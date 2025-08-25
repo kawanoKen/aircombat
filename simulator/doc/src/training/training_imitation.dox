@@ -1,0 +1,144 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_training_imitation 模倣学習のための機能
+
+# ExpertWrapper クラス {#section_training_imitation_ExpertWrapper}
+
+本シミュレータは、異なる Observation、Action 形式を持つ Agent の行動を模倣するような
+模倣学習を行いやすくするための機能を有している。
+
+この機能の根幹をなすのは Agent クラスの派生クラスとして実装された ExpertWrapper クラスである。
+ExpertWrapper クラスはメンバ変数として expert(模倣される側)と imitator(模倣する側)の
+2 つの Agent インスタンスを保持し、環境外部のポリシーから供給された expert の Action を
+最も類似した imitator の Action に変換したうえで両 Agent の処理ループを回し、
+両方又は一方の observation を環境外部に返すものである。
+
+step 関数における ExpertWrapper の処理フローは下図の通りである。
+
+@image html "imitation_flow.png" "ExpertWrapper の step 関数中の処理フロー" width=100%
+
+Action の変換にあたっては、親 Asset に渡される commands に加え、
+その行動の意図を何かしらの形で表現する [decision](\ref section_training_imitation_common_decision_format)を
+observables として生成しておき、これらを imitator 側でオーバーライドした
+[convertActionFromAnother](\ref Agent::convertActionFromAnother) 関数に与えることで
+imitator 側の行動空間内で最も類似した Action を計算し、メンバ変数として保持する仕様としている。
+
+親 Asset に渡される commmands は、expert が生成したものと imitator が生成したものの好きな方を
+選択できるようになっている。
+また、imitator の control 関数を実行する際に、expert の decision と commands を反映して
+修正を行いたい場合も想定されるが、そのような場合には imitator 側のクラスで
+[controlWithAnotherAgent](\ref Agent::controlWithAnotherAgent) 関数をオーバーライドしておくことで
+対応可能となっている。
+なお、もしオーバーライドされていなければ通常の control 関数がそのまま呼び出される。
+
+# Agent クラス間に共通の行動意図表現について {#section_training_imitation_common_decision_format}
+
+一般に、 Action の値が何を意味しているかは Agent クラスによって異なること、
+commands は Asset の制御用に各 tick の出力値として加工された値に過ぎないことから、
+いずれも他の Agent クラスにとっては行動の意図を表現している情報ではない。
+
+そのため、他の Agent クラスを模倣した学習を実現するためには、
+両クラスの間で共通の行動意図表現が必要となる。
+
+本シミュレータではその行動意図表現を decision として、observables の一要素として記述することとしており、
+ExpertWrapper クラスによる模倣学習を行いやすくするための機能で使用している。
+
+本シミュレータがデフォルトで使用している基本的な空対空戦闘用の行動意図表現は以下に挙げるキーを持ったdictである。
+ただし、模倣する側とされる側の間で情報を伝達するための単なるパイプとして捉え、
+必要に応じて任意の変数を追加で共有してしまっても差し支えない。
+
+- Roll
+
+    ロール方向の回転に関する行動意図を表す。
+    以下のいずれかの形式のlistで表現する。
+
+    - ["Don't care"]
+
+        ロール方向の回転について指定なしであることを表す。
+
+    - ["Angle", value]
+
+        ロール方向の回転について目標ロール角valueへの回転を意図していることを表す。
+
+    - ["Rate", value]
+
+        ロール方向の回転について指定角速度valueでの回転を意図していることを表す。
+
+- Horizontal
+
+    水平方向への旋回に関する行動意図を表す。
+    以下のいずれかの形式のlistで表現する。
+
+    - ["Don't care"]
+
+        水平方向の旋回について指定なしであることを表す。
+
+    - ["Az_NED", value]
+
+        水平方向の旋回について NED の局所水平座標系での指定方位valueへの旋回を意図していることを表す。
+
+    - ["Az_BODY", value]
+
+        水平方向の旋回について機体正面を基準とした局所水平座標系(FSD)での指定方位valueへの旋回を意図していることを表す。
+
+    - ["Rate", value]
+
+        水平方向の旋回について指定角速度valueでの旋回を意図していることを表す。
+
+- Vertical
+
+    垂直方向の上昇・下降に関する行動意図を表す。
+    以下のいずれかの形式のlistで表現する。
+
+    - ["Don't care"]
+
+        垂直方向の上昇・下降について指定なしであることを表す。
+
+    - ["El", value]
+
+        垂直方向の上昇・下降について指定経路角(下向き正)valueでの上昇・下降を意図していることを表す。
+
+    - ["Pos", value]
+
+        垂直方向の上昇・下降について目標高度valueへの上昇・下降を意図していることを表す。
+
+    - ["Rate", value]
+
+        垂直方向の上昇・下降について指定角速度valueでの上昇・下降を意図していることを表す。
+
+- Throttle
+
+    加減速に関する行動意図を表す。
+    以下のいずれかの形式のlistで表現する。
+
+    - ["Don't care"]
+
+        加減速について指定なしであることを表す。
+
+    - ["Vel", value]
+
+        加減速について目標速度valueへの加減速を意図していることを表す。
+
+    - ["Accel", value]
+
+        加減速について指定加速度valueでの加減速を意図していることを表す。
+
+    - ["Throttle", value]
+
+        加減速について指定スロットルコマンド(0～1)valueでの加減速を意図していることを表す。
+
+- Fire
+
+    目標への射撃に関する行動意図を表す。
+    以下のいずれかの形式のlistで表現する。
+
+    - [<launchFlag>,<target>]
+
+        <launchFlag>は bool 型で、True のときに<target>に射撃する意図を持っていることを表す。
+        <target>は [Track3Dのjson表現](#section_simulation_Track_Track3D_json)とする。
+
+*/
+    }
+}

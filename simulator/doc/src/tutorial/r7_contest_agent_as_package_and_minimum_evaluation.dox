@@ -1,0 +1,98 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_r7_contest_agent_as_package_and_minimum_evaluation 異なる行動判断モデル同士を対戦させるための機能
+
+# Agent 及び Policy のパッケージ化の方法 {#section_r7_contest_agent_as_package}
+
+Agent と Policy をパッケージ化する際は、あるディレクトリに__init__.py を格納して
+Python モジュールとしてインポート可能な状態とし、
+インポートにより以下の 4 種類の関数がロードされるような形で実装されていれば、細部の実装方法は問わないものとする。
+
+1. getUserAgentClass(args: Dict={})･･･Agent クラスオブジェクトを返す関数
+2. getUserAgentModelConfig(args: Dict={})･･･Agent モデルの Factory への登録用に modelConfig を表す json(dict)を返す関数
+3. isUserAgentSingleAsset(args: Dict={})･･･Agent の種類(一つの Agent インスタンスで 1 機を操作するのか、陣営全体を操作するのか)を bool で返す関数(True が前者)
+4. getUserPolicy(args: Dict={})･･･２.６項で示す StandalonePolicy を返す関数
+
+\include sample/scripts/R7Contest/MinimumEvaluation/HandyRLSample01M/__init__.py
+
+## サンプルプラグインを改変していた場合のパッケージ化 {#section_r7_contest_agent_as_package_with_modified_sample}
+
+例えば、 [R7ContestSample](\ref mainpage_R7ContestSample)を改変してビルドしたものをインストールして使用していた場合は、
+site-packages以下にインストールされていた[R7ContestSample](\ref mainpage_R7ContestSample)ディレクトリごと
+__init__.pyと同じ場所にコピーして使用するのが最も簡単である。
+```bash
+YourPackagedAgent
+├__init__.py
+├<各種設定ファイルや重みファイル>
+└R7ContestSample # 改変版をsite-packagesからそのままコピー
+```
+
+そして、__init__.pyでインポートする際に
+```python
+from .R7ContestSample import YourCustomClass
+```
+のように"."付きの相対パスでインポートすれば、
+インストール済のプラグインとは別物としてインポートすることができる。
+
+特に、第4回空戦AIチャレンジの評価用環境では元の[R7ContestSample](\ref mainpage_R7ContestSample)がインストール済であるため、
+このように相対パスでインポートしておかないと、改変後のプラグインがインポートされない。
+
+あるいは、必要なファイルを特定できている場合は、
+関係する.pyファイルや.soファイルだけをコピーして相対パスでインポートしても問題はない。
+ただし、.soファイルをコピーする際はBuildIdentifier("BYYYYmmddHHMMSS")が付いている方をコピーすることを推奨する。
+
+## C++を使用した独自プラグインを作成して使用する場合の推奨事項 {#section_r7_contest_custom_cpp_plugin}
+
+第4回空戦AIチャレンジの投稿物にC++を使用した独自プラグイン(サンプルの改変を含む)を使用する場合には、
+
+- [BuildIdentifierの付与](#section_plugins_build_identification)を有効にする
+- 独自クラスをPython側に公開する際にpy::module_local(true)を指定しておく
+
+の二つを行っておくことを推奨する。これらを行っておくと、他の参加者の投稿物パッケージとの間で名前の衝突が起こりにくくなる。
+
+
+# パッケージ化された Agent 及び Policy の組を読み込んで対戦させるサンプル {#section_r7_contest_minimum_evaluation}
+
+本機能を用いて対戦を行うためには、まず sample/scripts/R7Contest/MinimumEvaluation 以下に前述の仕様に合うモジュールを定義し、
+sample/scripts/R7Contest/MinimumEvaluation/candidates.json に、
+対戦候補となる行動判断モデルの一覧を以下の形式で記述しておく。
+
+args として例えば Policy の重みファイルのパスを指定したり、 modelConfig を書き換えたりすることによって、
+単一のモジュールで複数の行動判断モデルを表現できるようになる。
+```json
+#candidates.json
+{
+    "userModelID": { # 行動判断モデルの固有名。args にも"userModelID"キーで自動的に追加される。
+        "userModuleID": str, # 使用するパッケージ名(ディレクトリ名)
+        "args": Dict, # 前述の 4 種類の関数に渡される引数。第4回空戦AIチャレンジの投稿物ではこれをargs.jsonとしてパッケージに同梱することとなる。
+        "logName": str, # 対戦結果ログを出力する際の行動判断モデルの識別名
+    }
+}```
+
+準備ができたら、 sample/scripts/R7Contest/MinimumEvaluation/evaluator.py を使用する。
+evaluator.py のコマンドライン引数は以下の通りである。
+```bash
+usage: evaluator.py [-h] [-n NUM_EPISODES] [-l LOG_DIR] [-r] [-v] [-i INITIAL_STATE] [-y] Blue Red
+
+positional arguments:
+  Blue                  Blue 側の行動判断モデルの名称
+  Red                   Red 側の行動判断モデルの名称
+
+options:
+  -h, --help            ArgumentParser で自動生成されるヘルプを出力
+  -n NUM_EPISODES, --num_episodes NUM_EPISODES
+                        対戦回数。省略時は 1 回
+  -l LOG_DIR, --log_dir LOG_DIR
+                        対戦ログの保存先。省略時は保存しない
+  -r, --replay          可視化用ログを別途保存する場合に指定する。
+  -v, --visualize       可視化する場合に指定する。
+  -i INITIAL_STATE, --initial_state INITIAL_STATE
+                        初期条件の設定方法を[random, selected, fixed]の中から指定する。省略時は random となる。 
+  -y, --youth           第4回空戦AIチャレンジのユース部門のシナリオとして実行する場合に指定する。省略時はオープン部門のシナリオとなる。
+```
+
+*/
+    }
+}

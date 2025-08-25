@@ -1,0 +1,36 @@
+{"Factory":{
+    "Reward":{
+        "BasicAACReward01":{
+            "class":"BasicAACReward01",
+            "config":{
+                "interval":{
+                    "unit":"time",
+                    "value":0.1
+                },
+                "rElim":0.0,
+                "rElimE":0.0,
+                "rBreakRatio":0.0,
+                "rBreak":0.0,
+                "rBreakE":0.0,
+                "adjustBreakEnd":true,
+                "rTimeup":0.0,
+                "rDisq":0.0,
+                "rDisqE":0.0,
+                "rHitRatio":0.0,
+                "rHit":{"Default":0.0},
+                "rHitE":{"Default":0.0},
+                "rAdvRatio":0.0,
+                "acceptNegativeAdv":false,
+                "rCrashRatio":0.0,
+                "rCrash":{"Default":0.0},
+                "rCrashE":{"Default":0.0},
+                "rOutRatio":0.0,
+                "adjustZerosum":true,
+                "variableRHit": true,
+                "variableRHitE": true,
+                "variableRCrash": true,
+                "variableRCrashE": true
+            }
+        }
+    }
+}}

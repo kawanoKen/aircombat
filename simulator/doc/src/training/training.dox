@@ -1,0 +1,17 @@
+/**
+
+\page page_training_feature 行動判断モデルの学習のための機能
+
+\subpage page_training_imitation
+
+\subpage page_training_MatchMaker
+
+\subpage page_training_create_custom_agent
+
+\subpage page_training_create_custom_ruler
+
+\subpage page_training_create_custom_reward
+
+第4回空戦AIチャレンジへのモデル投稿方法については、別途配布される資料を参照されたい。
+
+*/

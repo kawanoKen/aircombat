@@ -1,0 +1,35 @@
+namespace asrc{
+    namespace core{
+        namespace util{
+/**
+
+\page page_simulation_CommunicationBuffer CommunicationBuffer による Asset 間通信の表現
+
+本シミュレータにおいて、 Asset 間通信の簡易的な模擬として、 CommunicationBuffer を実装している。
+CommunicationBuffer は一つの json object(dict)を共有バッファとして参加中の Asset 間で読み書き
+を行うものとなっている。
+データの送信時は[send](\ref CommunicationBuffer::send)関数を用いて送信データを json 形式でバッファの
+更新方法(CommunicationBuffer::UpdateType::REPLACE または CommunicationBuffer::UpdateType::MERGE)とともに与える。
+
+データの受信時は[receive](\ref CommunicationBuffer::receive) 関数に受信したいキーを与えることで、
+該当するキーの更新時刻とデータを得ることができる。
+現時点では、キーの指定はバッファの最上位階層のみであり、子階層の指定には対応していない。
+
+CommunicationBuffer の生成には、participants と inviteOnRequest を指定する必要がある。
+いずれも json array(list)であり、前者は無条件で参加する Asset のリスト、
+後者は Asset 側から要求があった場合のみ参加させる Asset のリストである。
+これらのリストの要素は、 Asset の種別( PhysicalAsset , Controller ,  Agent ) と full nameをコロンで区切った文字列
+(例："PhysicalAsset:team/group/name")とする。
+Asset の full nameについては正規表現での指定に対応しており、マッチした全ての Asset を対象に含める。
+
+なお、必ずしも全ての Asset 間情報共有に CommunicationBuffer を用いる必要はなく、
+親子関係にある Asset 間で親が子のメンバ変数を直接参照するというようなことも許容される。
+
+また、より複雑に通信の遅延や距離による接続可否等を模擬したい場合は、
+ネットワーク状況を管理する PhysicalAsset 又は Controller を新たに定義し、
+それらの間で CommunicationBuffer を繋いだうえでそれらの処理の中で遅延等の表現を行うことで実現可能となる。
+
+*/
+        }
+    }
+}

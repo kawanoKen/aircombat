@@ -1,0 +1,17 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_simulation_entity シミュレーション登場物について
+
+\subpage page_simulation_entity_type
+
+\subpage page_simulation_entity_basic_info
+
+\subpage page_simulation_entity_Factory_registration
+
+\subpage page_simulation_entity_creation
+
+*/
+    }
+}

@@ -1,0 +1,36 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_training_create_custom_ruler 独自 Ruler の実装方法
+
+独自の Ruler クラスを実装する場合の大まかな流れは以下のとおりである。基本となる基底クラス
+は Ruler クラスである。
+
+1. 各種のコールバック関数のうち、必要なものをオーバーライドする。
+
+2. 必要に応じてイベントハンドラを定義し、適切な場所(通常は [onEpisodeBegin](\ref Ruler::onEpisodeBegin))
+    で [addEventHandler](\ref SimulationManagerAccessorForCallback::addEventHandler)
+    を呼んで SimulationManager に登録する。
+
+3. [checkDone](\ref Ruler::checkDone)関数をオーバーライドし、終了判定と勝敗判定を記述する。
+
+4. modelConfig として設定可能とするパラメータを選択し、他の登場物に依存する初期化処理が必要な場合は
+    [validate](\ref Ruler::validate) 関数もオーバーライドし、初期化処理を記述する。
+
+5. メンバ変数 [score](\ref Ruler::score)、[stepScore](\ref Ruler::stepScore)、
+    [dones](\ref Ruler::dones)、[winner](\ref Ruler::winner)、[endReason](\ref Ruler::endReason) が適切に計算されているかを確認する。
+    endReason は enum class とし、基底クラスのものをそのまま使わない場合は再定義する。
+
+6. C++で実装した場合、Pybind11 を用いて Python 側へ公開する。
+
+7. Factory へクラスを登録する処理をどのタイミングで実行するかを決定する。
+    インポート時に呼ばれるように記述してもよいし、ユーザーがインポート後に手動で登録するものとしてもよい。
+
+8. json ファイル等を用意し、Factory にモデル登録ができるようにする。
+
+9. 以上により、登録したモデル名を SimulationManager の config["Ruler"]に記述することで独自の Ruler が使用可能となる。
+
+*/
+    }
+}

@@ -1,0 +1,303 @@
+namespace asrc{
+    namespace core{
+/**
+
+\page page_r7_contest_handyrl_sample HandyRL(の改変版)を用いた強化学習サンプル
+
+sample/scripts/R7Contest/HandyRLSample以下には、
+[HandyRL](https://gihub.com/DeNA/HandyRL)を本シミュレータ用に改変したものを
+用いて深層強化学習を行うサンプルを同梱している。
+
+# 元の HandyRL に対する改変・機能追加の概要 {#section_r7_contest_handyrl_sample_modification}
+
+本サンプルでは HandyRL に以下のような改変・機能追加を行っている。
+- Discrete以外のaction_spaceに対応
+- MatchMakerによる行動判断モデルの動的選択に対応
+- Imitationに対応
+- Ape-X型のε-greedyに対応
+- SummaryWriterによるTensorboard形式のログ出力に対応
+- turn_basedな環境に対する特殊化を削除
+- evalモードの削除
+- ReplayBufferを分離し、優先度付き経験再生を使用可能に
+- rayによる並列化に変更
+- 複数のLearnerを連接可能に
+- agent.pyにおいて温度パラメータによる焼きなましを無効化
+- 学習率を固定化可能に
+- eval_rate(学習用と評価用のエピソードの割合)を固定化可能に
+
+# 学習の実行方法 {#section_r7_contest_handyrl_sample_run_train}
+
+sample/scripts/R7Contest/HandyRLSample 上で、
+```bash
+python main.py R7_contest_open_sample_M.yaml --train
+```
+を実行するとオープン部門のシナリオで1体で陣営全体を操作する行動判断モデルについて、
+[R7ContestTwoTeamCombatMatchMaker](\ref page_r7_contest_match_maker)
+を用いたSelf-Play による学習が行われる。
+
+学習結果は./results/Open/Multi/YYYYmmddHHMMSS 以下に保存される。
+なお、"M"を"S" に変更すると、1 体で1機を操作する行動判断モデルとなる。
+また、"open"を"youth"に変更するとユース部門のシナリオとなる。
+
+# 学習済モデルの評価 {#section_r7_contest_handyrl_sample_run_evaluation}
+
+学習済モデルは、./results/Open/Multi/YYYYmmddHHMMSS/policies/checkpoints 以下に保存されている。
+このモデルの評価は、７項に示す sample/scripts/R7Contest/MinimumEvaluation 以下
+に同梱されているスクリプトを用いて行うことができる。
+
+同ディレクトリ中の candidates.json を開き、例えば
+"test":{
+    "userModuleID":"HandyRLSample01M",
+    "args":{"weightPath":<学習済の.pth ファイルのフルパス>}
+}
+のように候補を追加し、同ディレクトリ上で
+```bash
+python evaluator.py "test" "Rule-Fixed" -n 10 -v -l "eval_test.csv"
+```
+と実行すると、初期行動判断モデルとの対戦による学習済モデルの評価を行うことができる。
+
+# yaml の記述方法 {#section_r7_contest_handyrl_sample_yaml_format}
+
+yamlの記述方法は以下のとおりである。
+実際の値の例はサンプルファイルを参照されたい。
+
+```yaml
+save_dir: str # 保存先を記述する。
+
+ray_args: # rayクラスタに関する設定を記述する。
+    namespace: str # rayクラスタの名前空間を指定する。
+    head_ip_address: # rayクラスタの本体のIPアドレスを指定する。"auto"とすると自動選択となる。
+    entrypoint_ip_address: # 学習スクリプトを実行する端末のIPアドレスを指定する。
+                           # ここを127.0.0.1として新規クラスタが生成された場合、別プロセスからのアクセスができなくなるらしい。
+                           # アクセス可能なクラスタを事前に立ち上げておくか、127.0.0.1以外のIPアドレスで指定する必要がある。この例は前者の想定。
+
+env_args: # シミュレーション環境に関する設定を記述する。
+    env: ASRCAISim1 # HandyRL用の環境クラス。実装は./handyrl/envs/ASRCAISim1.pyにある。
+    env_config: # 上記のenvに渡す引数
+        config: # SimulationManager のコンストラクタに渡すconfig。
+        - ./configs/R7_contest_open_mission_config.json # 戦闘シナリオの基本構造を指定
+        - ./configs/R7_contest_open_asset_placeholder.json # 機体性能変化用のプレースホルダー
+        - ./configs/R7_contest_learning_config_S.json # AgentConfigDispatcherとRewardの指定
+        - ./configs/R7_contest_agent_ruler_reward_models.json # Agent、Ruler、Rewardのmodel configの指定
+        - Manager:
+            ViewerType: None
+            Callbacks: {}
+            Loggers: {}
+
+policy_config: # 行動判断ポリシーに関する設定
+    Learner: # 使用するポリシー名をキーとするdictで与える。
+             # このポリシー名に対応するAgentConfigDispatcherのaliasが
+             # ./configs/R7_contest_learning_config_S.json (env_configで与えたファイル)
+             # に記述されている必要がある。
+        multi_port: bool # 中央集権型ならtrue、分散型ならfalse
+        active_limit: int # MatchMakerで選択候補とする過去の重みの下図
+        is_internal: bool # NNモデルが不要なポリシーかどうか(現在はこのフラグは不使用)
+        populate: # 重み保存に関する設定
+            first_population: int # 初回保存タイミング(エピソード数)
+            interval: int # 保存間隔(エピソード数)
+            on_start: bool # 学習開始時点の重みを保存するかどうか
+        rating_initial: # 初期イロレーティング
+        rating_fixed: # イロレーティングを固定するかどうか
+        initial_weight: str or null # 初期重みを読み込む場合はそのパスを指定する
+        model_class: # NNクラス名を指定する。./main.pyのcustom_classesに登録したもの指定する。
+        model_config: dict # NNクラスのコンストラクタに渡す引数を記述する。
+    Initial: # observation,actionの入出力が不要なルールベースモデルの場合は以下のように指定できる
+        multi_port: false
+        active_limit: null
+        is_internal: true
+        populate: null
+        rating_initial: 1500
+        rating_fixed: true
+        initial_weight: null
+        model_class: DummyInternalModel
+        model_config: {}
+    Expert: # 教師役のtrajectoryを模倣する場合はこれを用いる。
+        multi_port: false
+        active_limit: null
+        is_internal: true
+        populate: null
+        rating_initial: 1500
+        rating_fixed: false
+        initial_weight: null
+        model_class: DummyInternalModel
+        model_config: {}
+
+train_args: #学習に関する設定
+    Learner: # Learnerの識別名をキーとしたdictで与える。
+        node_designation: str or null # Learnerを置くIPアドレスの指定があれば書く。ここで127.0.0.1を指定してはいけないらしい。nullで問題ない。
+        num_gpus: float # GPUの数。基本的には1
+        match_monitor_class: str # 使用するMatchMonitorクラス名を指定。./main.pyのcustom_classesに登録したもの指定する。
+        turn_based_training: false # ターンベースな環境を前提とした学習にするかどうか。falseのみ。
+        observation: false # 行動しないAgentによる観測を許すかどうか。原則false。
+        auto_tune_lr: bool # 本家HandyRLでは学習率はハードコーディングでスケジューリングされている。
+                            # その有効/無効を切り替えるフラグ
+        lr: float # 本家HandyRLのスケジューリングを無効化する場合の学習率
+        gamma: float # 報酬割引率
+        forward_steps: int # 学習データ一つあたりのステップ数
+        burn_in_steps: int  # burn-inのステップ数
+        compress_steps: int # エピソードデータの圧縮を行う単位(ステップ数)
+        entropy_regularization: # エントロピー正則化の強さ
+        entropy_regularization_decay: # エントロピー正則化の時間方向の減衰
+        separate_policy_gradients: bool # trueにすると、方策勾配のlossがaction要素ごとに独立に計算される。
+        exploration_config: # 探索に関する設定
+            use_exploration: bool # Ape-X型のε-greedyによる探索を有効にするかどうか。
+            only_one_explorer_per_policy: bool # 複数のpolicyが存在する場合に1ステップあたりに探索を行うpolicyを一つに限定するかどうか
+            eps_start: float # εの最大値の初期値
+            eps_end: float # εの最大値の終端値
+            eps_decay: float # εの減衰が完了するエポック数。負数を指定すると減衰なし。
+            alpha: float # εのworkerごとの分布を定めるパラメータ
+            cycle: int # εを定める際にworker数を水増しするパラメータ。
+        checkpoint_interval: int # checkpointの保存周期(epoch単位)
+        update_episodes: int # 重みの更新を行う周期(episode単位)
+        batch_size: int # バッチサイズ
+        minimum_episodes: # 重みの学習を始めるタイミング(episode単位)
+        epochs: int # 終了するエポック数。負数の場合は自動終了しない。
+        num_batchers: int # Batcherインスタンスの数
+        eval_rate: float # 学習でなく評価に用いるエピソードの割合。本家HandyRLでは勝手にupdate_episode^(-0.15)とのmaxを取っていたものを無効化している。
+        worker:
+            num_parallel: int # workerの数
+        lambda: float # TD(λ)のλ
+        policy_target: str # actor lossのターゲット。'UPGO' 'VTRACE' 'TD' 'MC'から選択。
+        value_target: str # critic lossのターゲット。'VTRACE' 'TD' 'MC'から選択。
+        seed: int # 乱数のシード
+        policy_to_train: str # 学習対象のpolicy名。policy_configに挙げたものから選択する。
+        policy_to_imitate: [] # 摸倣学習を実施する際は教師役のpolicy名を与える。policy_configに挙げたものから選択する。
+        disable_rl_from_imitator: bool # 教師役のtrajectoryに対するオフポリシー強化学習を無効化するかどうか。
+        imitation_beta: float # 模倣時に報酬(Advantage)を参照してlossの重み付けをする場合の係数。
+        imitation_adv_ma_initial：float # 模倣時に報酬(Advantage)を参照してlossの重み付けをする場合にAdvantageを正規化するための移動平均の初期値。
+        imitation_adv_ma_update_rate: float # 模倣時に報酬(Advantage)を参照してlossの重み付けをする場合にAdvantageを正規化するための移動平均の更新量。
+        imitation_kl_threshold: float # 模倣loss計算時のKLダイバージェンスのクリッピングを行う値。
+        imitation_loss_scale: float # 模倣lossの係数
+        imitation_loss_threshold: float # 模倣loss計算時のlossのクリッピングを行う値。
+        deterministic: #分布からのサンプリングでなくgreedyに行動をサンプリングするエピソードの確率。
+            g: float # 学習用エピソードにおける割合
+            e: float # 評価用エピソードにおける割合
+        record_hidden_in: bool # NNの内部状態をリプレイバッファに保存するかどうか。メモリ消費量が激増するためFalseを推奨する。
+        prioritized_replay: bool # 優先度付き経験再生を使用するかどうか。
+        replay_buffer_config: # リプレイバッファに関する設定
+            node_designation: str or null # リプレイバッファを置くノードのIPアドレス。ここでも127.0.0.1を指定してはいけないらしい。nullで問題ない。
+            independent_replay_for_each_player: bool # 各player単位でリプレイバッファに記録するかどうか(Trueを推奨)
+            discard_untrainable_players: bool # 学習対象以外のpolicyの情報を捨てるかどうか(Trueを推奨)
+            ignore_noaction_timesteps: bool # 誰も行動していない時刻のデータを無視するかどうか(Falseの場合は空の時刻として残す)
+            # ↓本家のReplayBufferを使用する場合
+            maximum_episodes: 3000 #保存するエピソード数の上限
+            # ↓PrioritizedReplayBufferを使用する場合
+            calc_initial_priority: bool # バッファへの追加時に初期優先度を計算するかどうか。
+            priority_target: str # 優先度を計算する際のadvantageのターゲット。'VTRACE' 'TD' 'MC' 'SAME'から選択。
+                                    # 'SAME'はcritic lossのターゲットと同じものを使用する。
+            capacity: int # リプレイバッファの容量(ステップ数単位)
+            alpha: float # サンプリングのパラメータ
+            beta: float # サンプリングのパラメータ
+            beta_decay: int # サンプリングのパラメータ
+            store_interval: int # リプレイバッファのデータ点として登録するステップ数の間隔
+            eta: float # サンプリングのパラメータ
+            eps: float # サンプリングのパラメータ
+        worker_options:
+            num_cpus: float # 1 workerあたりのCPU。基本的に1でよい。
+
+match_maker_args: # MatchMakerに関する設定
+    match_maker_class: str # 使用するMatchMakerクラス名を指定。./main.pyのcustom_classesに登録したもの指定する。
+    node_designation: str or null # MatchMakerを置くノードのIPアドレスを指定する。127.0.0.1を指定してはいけないらしい。nullで問題ない。
+    seed: # 乱数のシード
+    match_config: # MatchMakerのコンストラクタ引数を記述する。以下はR7ContestTwoTeamCombatMatchMakerの場合の例
+        #expert_ratio: float # 模倣学習を行う際のみ指定する。教師役による対戦の割合
+        warm_up_episodes: int # 学習初期に初期行動判断モデルのみと対戦させる場合、そのエピソード数
+        youth: bool # ユース部門の場合にTrueとする。
+        symmetric_initial_state: # 戦闘機の初期配置を点対称にするかどうか。
+        initial_state_number: 5 # 陣営の全機数。5で固定。
+        initial_state_lower: # Blue(teams[0])だった場合に設定する初期条件の下限値。省略時は置換しない。
+            pos: [float,float,float] # 初期位置
+            vel: float # 初期速度
+            heading: float # 初期方位(真北を0とし東回りを正とする)
+        initial_state_upper: # Blue(teams[0])だった場合に設定する初期条件の上限値。省略時は置換しない。
+            pos: [float,float,float] # 初期位置
+            vel: float # 初期速度
+            heading: float # 初期方位(真北を0とし東回りを正とする)
+        asset_spec_randomization: bool # 機体性能をランダム化する場合にtrueとする。(youth==Falseのときのみ有効)
+        symmetric_randomization: bool # 機体性能を両陣営で対象となるようにランダム化するかどうか。オープン部門の設定はTrue
+        heterogeneous_randomization: bool # 機体性能を陣営内でバラバラにランダム化するかどうか。オープン部門の設定はTrue
+        randomized_asset_spec: # 各機体性能の変動範囲
+            rcs_scale: [float,float] # RCSスケール
+            radar_range: [float,float] # レーダ探知距離(基準値からの倍率で指定)
+            radar_coverage: [float,float] # レーダ探知覆域(正面からの角度で指定)
+            maximum_speed: [float,float] # 機体最大速度(基準値からの倍率で指定)
+            num_missiles: [int,int] # 初期誘導弾数
+            missile_thrust: [float,float] # 誘導弾推力(基準値からの倍率で指定)
+            shot_approval_delay: [float,float] # 射撃承認までの遅延時間(秒で指定)
+```
+
+# yaml で定義可能なニューラルネットワークのサンプル {#section_r7_contest_handyrl_sample_nn}
+
+また、このobservationとactionのspaceに対応したニューラルネットワークのサンプルを、
+- [R7ContestTorchNNSampleForHandyRL](\ref R7ContestSample.R7ContestTorchNNSampleForHandyRL)
+に実装しているのでこちらも参考にされたい。
+
+ニューラルネットワークの構造を yaml 上で定義できる HandyRL 用 NN モデルの簡易的なサンプルクラスを、
+[R7ContestSample](\ref mainpage_R7ContestSample)プラグインに
+[R7ContestTorchNNSampleForHandyRL](\ref R7ContestSample.R7ContestTorchNNSampleForHandyRL)
+として実装している。
+
+また、そのためのユーティリティとして
+[GenericTorchModelUtil.py](\ref R7ContestSample.GenericTorchModelUtil)に、
+与えられた dict から動的に torch.nn.Module を生成する [GenericLayers](\ref R7ContestSample.GenericTorchModelUtil.GenericLayers) クラスを実装している。
+GenericLayers は、torch.nn のクラス名とコンストラクタ引数の組を並べることで、
+torch.nn.Sequential に類似した形でニューラルネットワークを生成するものとなっている。
+
+[R7ContestTorchNNSampleForHandyRL](\ref R7ContestSample.R7ContestTorchNNSampleForHandyRL) は、
+この GenericLayers を部分モデルとして使用し、HandyRL で使用可能なニューラルネットワークモデルとして組み立てたものである。
+
+# カスタムクラスの使用 {#section_r7_contest_handyrl_sample_custom_classes}
+
+本サンプルは、ニューラルネットワーク(本シミュレータにおける Policy に相当。HandyRL における呼称では"model")、
+MatchMaker 、[行動確率分布](\ref HandyRLUtility.distribution)についてカスタムクラスを使用できるような機構を
+有している。sample/scripts/R7Contest/HandyRLSample/main.py において、
+```python
+custom_classes={
+    # models
+    "R7ContestTorchNNSampleForHandyRL": R7ContestTorchNNSampleForHandyRL,
+    "DummyInternalModel": DummyInternalModel,
+    # match maker
+    "R7ContestTwoTeamCombatMatchMaker": R7ContestTwoTeamCombatMatchMaker,
+    "TwoTeamCombatMatchMonitor": TwoTeamCombatMatchMonitor,
+    # action distribution class getter
+    "actionDistributionClassGetter": getActionDistributionClass,
+}
+```
+のように、識別名とクラスオブジェクトを対応付けた dict を定義しておき、
+前述の yaml で指定することによって、これらの中から選択して使用できるようになっている。
+
+ニューラルネットワークのクラスは policy_config において Policy ごとに"model_class"キーで指定する。
+
+MatchMaker のクラスは match_maker_args において"match_maker_class"キーで指定し、
+MatchMonitor のクラスは train_args において"match_monitor_class"キーで指定する。
+
+行動確率分布は policy_config において Policy ごとに"model_config"キーとして与える dict 内で
+"actionDistributionClassGetter"キーで指定する(省略可。)
+
+# 学習ログの構成 {#section_r7_contest_handyrl_sample_logging}
+
+本サンプルで保存されるログは以下のような構成となる。
+なお、拡張子 pth で保存される Policy の重みは torch.nn.Module.state_dict()の返り値を torch.save(path)で保存したものであり、
+torch.load(path)で読み込んで torch.load_state_dict に与えることで復元可能なものである。
+```bash
+<save_dir> #yaml で指定した save_dir
+└YYYYmmddHHMMSS #学習開始時のタイムスタンプで作成
+　├policies #Policy の重みに関するログ
+　│├checkpoints #学習対象 Policy のエポックごとの重み
+　││├<policy>-<epoch>.pth
+　││└<policy>-latest.pth #最新の重み
+　│└initial_weights #各 Policy の初期重み
+　│　└<policy>.pth
+　├matches #MatchMaker に関するログ
+　│├checkpoints #チェックポイント
+　││└MatchMaker-<epoch>.dat
+　│└matches_YYYYmmddHHMMSS.csv #MatchMaker が生成した全対戦結果のログ
+　└logs #SummaryWriter による Tensorboard ログ
+　　└<Learner> # train_argsで指定した各Learner名のディレクトリ
+　　　└events.out.tfevents.～ #Tensorboard ログ
+```
+
+*/
+
+    }
+}

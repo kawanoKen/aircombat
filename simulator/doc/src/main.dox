@@ -1,0 +1,58 @@
+/**
+
+\mainpage ASRCAISim1
+\anchor mainpage_core
+
+ASRCAISim1 第4回空戦AIチャレンジ配布版 取扱説明書
+
+Documentation of ASRCAISim1 for the 4th Air Combat AI Challenge edition
+
+本バージョン(第4回空戦AIチャレンジ配布版)は第4回空戦AIチャレンジの参加規約及び情報公開ポリシー
+に規定される条件で利用許諾されています。
+詳細は https://signate.jp/competitions/1635 を参照してください。
+
+The redistribution and use of this edition of this software is permitted and constrained
+under the terms and policy of the 4th Air Combat AI Challenge.
+Please see https://signate.jp/competitions/1635 for detail.
+
+# Contents
+
+\subpage page_installation
+
+\subpage page_simulation
+
+\subpage page_training_feature
+
+\subpage page_simulation_basic_aac
+
+\subpage page_plugins
+
+\subpage page_r7_contest_tutorial
+
+
+# License
+
+本ソフトウェアは防衛装備庁航空装備研究所が作成したものであり、
+無許諾での使用・改変及び再配布を禁止します。
+また、防衛装備庁航空装備研究所は本ソフトウェアに関していかなる保証も行わず、
+使用者による本ソフトウェアの使用・改変及び再配布に伴って生じたいかなる損害に対しても
+責任を負わないものとします。
+
+Copyright (c) 2021-2025 Air Systems Research Center, Acquisition, Technology & Logistics Agency(ATLA)
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are forbidden unless ATLA gives a permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+*/

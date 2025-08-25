@@ -1,0 +1,6 @@
+include sample/scripts/R7Contest/HandyRLSample/MANIFEST.in.fragment
+include sample/scripts/R7Contest/HandyRLSample/LICENSE
+recursive-include sample/scripts/R7Contest/HandyRLSample *.py
+recursive-include sample/scripts/R7Contest/HandyRLSample *.json
+recursive-include sample/scripts/R7Contest/HandyRLSample *.yaml
+recursive-exclude sample/scripts/R7Contest/HandyRLSample *.pyc

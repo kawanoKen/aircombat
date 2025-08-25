@@ -1,0 +1,12 @@
+/**
+
+\mainpage BasicAirToAirCombatModels01
+\anchor mainpage_BasicAirToAirCombatModels01
+
+基本的な空対空戦闘のルールやルールベース行動判断モデルを追加するプラグイン
+
+
+
+[ドキュメントのトップに戻る(ASRCAISim1)](\ref mainpage_core)
+
+*/

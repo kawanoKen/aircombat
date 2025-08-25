@@ -1,0 +1,48 @@
+{
+    "interval":{
+        "unit":"time",
+        "step":3.0,
+        "perceive":1.0,
+        "control":1.0,
+        "behave":1.0
+    },
+
+    "maxParentNum":4,
+    "maxFriendNum":1,
+    "maxEnemyNum":5,
+    "maxFriendMissileNum":16,
+    "maxEnemyMissileNum":12,
+
+    "horizontalNormalizer":200000.0,
+    "verticalNormalizer":20000.0,
+    "fgtrVelNormalizer":300.0,
+    "mslVelNormalizer":1200.0,
+
+    "use_observation_mask":true,
+    "use_action_mask":true,
+
+    "remaining_time_clipping":10,
+
+    "dstAz_relative":true,
+    "turnTable":[-45,-30,-15,-10,-5,0,5,10,15,30,45],
+    "use_override_evasion":true,
+    "evasion_turnTable":[-45,-30,-15,-10,-5,0,5,10,15,30,45],
+    "accelTable":[-10.0,-5.0,-2.5,0.0,2.5,5.0,10.0],
+
+    "altMin":2000,
+    "altMax":15000,
+    "dOutLimit":7500,
+    "dOutLimitThreshold":15000,
+    "dOutLimitStrength":1e-3,
+    "maxSimulShot":4,
+    "minimumV":150.0,
+    "minimumRecoveryV":180.0,
+    "minimumRecoveryDstV":200.0,
+
+    "altitudeKeeper":{
+        "pGain":-3e-1,
+        "dGain":-1e-1,
+        "minPitch":-0.524,
+        "maxPitch":0.524
+    }
+}

@@ -1,0 +1,15 @@
+/**
+
+\mainpage MatchMaker
+\anchor mainpage_MatchMaker
+
+複数の行動判断モデルを切り替えながら対戦の実行を行うためのプラグイン
+
+\subpage page_MatchMaker_MatchMaker
+
+\subpage page_MatchMaker_TwoTeamCombatMatchMaker
+
+
+[ドキュメントのトップに戻る(ASRCAISim1)](\ref mainpage_core)
+
+*/

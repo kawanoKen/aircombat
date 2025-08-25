@@ -1,0 +1,37 @@
+.title ,
+div.contents div.textblock h1,
+div.contents div.textblock h2,
+div.contents div.textblock h3,
+div.contents div.textblock h4,
+div.contents div.textblock h5 {
+	color: rgb(0,93,173);
+}
+
+body, table, div, p, dl {
+	font-size: 14px;
+}
+
+div.contents div.textblock h1 {
+	border-top: 4px double rgb(0,93,173);
+	font-size: 150%;
+	border-bottom: 4px double rgb(0,93,173);
+	padding: 6px;
+}
+div.contents div.textblock h2 {
+	font-size: 150%;
+	border-bottom: 3px double rgb(0,93,173);
+	padding: 6px;
+}
+div.contents div.textblock h3 {
+	font-size: 120%;
+	border-bottom: 1px solid rgb(0,93,173);
+	padding: 6px;
+}
+div.contents div.textblock h4 {
+	font-size: 100%;
+	border-bottom: 1px dotted rgb(0,93,173);
+	padding: 6px;
+}
+div.contents div.textblock h5 {
+	font-size: 100%;
+}

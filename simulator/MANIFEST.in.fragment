@@ -1,0 +1,14 @@
+include builder.sh
+include builder.bat
+include CMakeLists.txt
+include MANIFEST.in.fragment
+include install_all.py
+include license.txt
+include uninstall_all.py
+graft ASRCAISim1
+graft include
+graft src
+global-exclude *.pyc
+prune build
+graft thirdParty/scripts
+

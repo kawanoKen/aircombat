@@ -1,0 +1,33 @@
+[build-system]
+requires = [
+    "setuptools>=62.4", 
+    "wheel", 
+    "numpy", 
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ASRCAISim1"
+dynamic = [
+    "entry-points"
+]
+version = "2.0.0"
+authors = [
+    {name ="Air Systems Research Center, ATLA"},
+]
+readme = "README.md"
+license = {file = "license.txt"}
+dependencies = [
+    "numpy",
+    "pygame",
+    "pyOpenGL",
+    "gymnasium",
+]
+requires-python = ">=3.8"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+namespaces = false

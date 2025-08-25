@@ -21,7 +21,7 @@ services:
   dev1:
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile.macos
+      dockerfile: dockerfiles/Dockerfile.cpu
     container_name: atla4
     ports:
       - "8080:8080"

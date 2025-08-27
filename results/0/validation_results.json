@@ -2,1339 +2,15 @@
  "own": "Red",
  "details": {
   "0": {
-   "finishedTime": 39.29105877876282,
-   "step_count": 607,
-   "numAlives": {
-    "Blue": 5.0,
-    "Red": 1.0
-   },
-   "endReason": "ELIMINATION",
-   "scores": {
-    "Blue": 1.0,
-    "Red": 0.0
-   },
-   "error": false,
-   "red_error_message": "",
-   "blue_error_message": "",
-   "config": {
-    "AgentConfigDispatcher": {
-     "BlueAgents": {
-      "elements": [
-       {
-        "model": "Agent_1",
-        "name": "Blue_1_1",
-        "policy": "Policy_1",
-        "port": "0",
-        "type": "External"
-       },
-       {
-        "model": "Agent_1",
-        "name": "Blue_1_2",
-        "policy": "Policy_1",
-        "port": "0",
-        "type": "External"
-       },
-       {
-        "model": "Agent_1",
-        "name": "Blue_1_3",
-        "policy": "Policy_1",
-        "port": "0",
-        "type": "External"
-       },
-       {
-        "model": "Agent_1",
-        "name": "Blue_1_4",
-        "policy": "Policy_1",
-        "port": "0",
-        "type": "External"
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     },
-     "RedAgents": {
-      "elements": [
-       {
-        "model": "Agent_0",
-        "name": "Red_0",
-        "policy": "Policy_0",
-        "port": "0",
-        "type": "External"
-       },
-       {
-        "model": "Agent_0",
-        "name": "Red_0",
-        "policy": "Policy_0",
-        "port": "1",
-        "type": "External"
-       },
-       {
-        "model": "Agent_0",
-        "name": "Red_0",
-        "policy": "Policy_0",
-        "port": "2",
-        "type": "External"
-       },
-       {
-        "model": "Agent_0",
-        "name": "Red_0",
-        "policy": "Policy_0",
-        "port": "3",
-        "type": "External"
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     }
-    },
-    "AssetConfigDispatcher": {
-     "BlueFighters": {
-      "elements": [
-       {
-        "model": "BlueFighter1",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "BlueFighter2",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "BlueFighter3",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "BlueFighter4",
-        "type": "PhysicalAsset"
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     },
-     "BlueInitialState": {
-      "elements": [
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 297.83309303251656,
-          "pos": [
-           13021.352309161943,
-           97068.90091102335,
-           -11145.015012301803
-          ],
-          "vel": 271.85300255083354
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 235.8731513620905,
-          "pos": [
-           9647.264053127845,
-           101123.66850449232,
-           -7239.7631893003445
-          ],
-          "vel": 276.0211386702504
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 252.92535582844837,
-          "pos": [
-           -13036.430792628245,
-           102493.41240178261,
-           -9301.151500437953
-          ],
-          "vel": 270.96835054247356
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 282.4530111449155,
-          "pos": [
-           -13550.638764361214,
-           100655.59991901822,
-           -11482.840247408454
-          ],
-          "vel": 261.3265578911593
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 135.57049551575295,
-          "pos": [
-           -63570.56146502979,
-           103500.15582859454,
-           -10000.0
-          ],
-          "vel": 300.0
-         }
-        }
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     },
-     "Escorted": {
-      "model": "R7ContestModels.R7ContestOpenEscorted",
-      "type": "PhysicalAsset"
-     },
-     "RedFighters": {
-      "elements": [
-       {
-        "model": "RedFighter1",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "RedFighter2",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "RedFighter3",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "RedFighter4",
-        "type": "PhysicalAsset"
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     },
-     "RedInitialState": {
-      "elements": [
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 117.83309303251656,
-          "pos": [
-           -13021.352309161943,
-           -97068.90091102335,
-           -11145.015012301803
-          ],
-          "vel": 271.85300255083354
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 55.87315136209054,
-          "pos": [
-           -9647.264053127845,
-           -101123.66850449232,
-           -7239.7631893003445
-          ],
-          "vel": 276.0211386702504
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 72.92535582844835,
-          "pos": [
-           13036.430792628245,
-           -102493.41240178261,
-           -9301.151500437953
-          ],
-          "vel": 270.96835054247356
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 102.45301114491548,
-          "pos": [
-           13550.638764361214,
-           -100655.59991901822,
-           -11482.840247408454
-          ],
-          "vel": 261.3265578911593
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 180.0,
-          "pos": [
-           43590.8895332118,
-           -95000.0,
-           -10000.0
-          ],
-          "vel": 300.0
-         }
-        }
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     }
-    },
-    "Assets": {
-     "Blue": {
-      "elements": [
-       {
-        "elements": [
-         {
-          "alias": "BlueFighters",
-          "index": 0,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "BlueFighters",
-          "index": 1,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "BlueFighters",
-          "index": 2,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "BlueFighters",
-          "index": 3,
-          "instance": "Same",
-          "type": "alias"
-         }
-        ],
-        "names": [
-         "BlueF1",
-         "BlueF2",
-         "BlueF3",
-         "BlueF4"
-        ],
-        "order": "fixed",
-        "overrider": [
-         {
-          "elements": [
-           {
-            "alias": "BlueInitialState",
-            "index": 0,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "BlueInitialState",
-            "index": 1,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "BlueInitialState",
-            "index": 2,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "BlueInitialState",
-            "index": 3,
-            "instance": "Same",
-            "type": "alias"
-           }
-          ],
-          "order": "fixed",
-          "type": "group"
-         },
-         {
-          "element": {
-           "type": "direct",
-           "value": {
-            "instanceConfig": {
-             "datalinkName": "BlueDatalink"
-            }
-           }
-          },
-          "number": 4,
-          "type": "broadcast"
-         },
-         {
-          "elements": [
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "BlueAgents",
-              "index": 0,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "BlueAgents",
-              "index": 1,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "BlueAgents",
-              "index": 2,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "BlueAgents",
-              "index": 3,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           }
-          ],
-          "order": "fixed",
-          "type": "group"
-         }
-        ],
-        "type": "group"
-       },
-       {
-        "elements": [
-         {
-          "alias": "Escorted",
-          "overrider": [
-           {
-            "alias": "BlueInitialState",
-            "index": 4,
-            "type": "alias"
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "model": "R7ContestModels.R7ContestBlueEscortedAgent",
-              "name": "BlueE_Agent",
-              "port": "0",
-              "type": "Internal"
-             },
-             "instanceConfig": {
-              "datalinkName": "BlueDatalink"
-             }
-            }
-           }
-          ],
-          "type": "alias"
-         }
-        ],
-        "names": [
-         "BlueE"
-        ],
-        "order": "fixed",
-        "type": "group"
-       }
-      ],
-      "type": "concatenate"
-     },
-     "Red": {
-      "elements": [
-       {
-        "elements": [
-         {
-          "alias": "RedFighters",
-          "index": 0,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "RedFighters",
-          "index": 1,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "RedFighters",
-          "index": 2,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "RedFighters",
-          "index": 3,
-          "instance": "Same",
-          "type": "alias"
-         }
-        ],
-        "names": [
-         "RedF1",
-         "RedF2",
-         "RedF3",
-         "RedF4"
-        ],
-        "order": "fixed",
-        "overrider": [
-         {
-          "elements": [
-           {
-            "alias": "RedInitialState",
-            "index": 0,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "RedInitialState",
-            "index": 1,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "RedInitialState",
-            "index": 2,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "RedInitialState",
-            "index": 3,
-            "instance": "Same",
-            "type": "alias"
-           }
-          ],
-          "order": "fixed",
-          "type": "group"
-         },
-         {
-          "element": {
-           "type": "direct",
-           "value": {
-            "instanceConfig": {
-             "datalinkName": "RedDatalink"
-            }
-           }
-          },
-          "number": 4,
-          "type": "broadcast"
-         },
-         {
-          "elements": [
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "RedAgents",
-              "index": 0,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "RedAgents",
-              "index": 1,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "RedAgents",
-              "index": 2,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "RedAgents",
-              "index": 3,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           }
-          ],
-          "order": "fixed",
-          "type": "group"
-         }
-        ],
-        "type": "group"
-       },
-       {
-        "elements": [
-         {
-          "alias": "Escorted",
-          "overrider": [
-           {
-            "alias": "RedInitialState",
-            "index": 4,
-            "type": "alias"
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "model": "R7ContestModels.R7ContestRedEscortedAgent",
-              "name": "RedE_Agent",
-              "port": "0",
-              "type": "Internal"
-             },
-             "instanceConfig": {
-              "datalinkName": "RedDatalink"
-             }
-            }
-           }
-          ],
-          "type": "alias"
-         }
-        ],
-        "names": [
-         "RedE"
-        ],
-        "order": "fixed",
-        "type": "group"
-       }
-      ],
-      "type": "concatenate"
-     },
-     "type": "group"
-    },
-    "CommunicationBuffers": {
-     "BlueDatalink": {
-      "participants": [
-       "PhysicalAsset:Blue/Blue[FE][0-9]*"
-      ]
-     },
-     "RedDatalink": {
-      "participants": [
-       "PhysicalAsset:Red/Red[FE][0-9]*"
-      ]
-     }
-    },
-    "Loggers": {
-     "GUIStateLogger": {
-      "class": "GUIStateLogger",
-      "config": {
-       "episodeInterval": 1,
-       "innerInterval": 1,
-       "prefix": "./results/0/1_vs_0"
-      }
-     }
-    },
-    "Rewards": [],
-    "Ruler": "R7ContestModels.R7ContestRuler",
-    "TimeStep": {
-     "baseTimeStep": 1.0,
-     "defaultAgentStepInterval": 1
-    },
-    "ViewerType": "None",
-    "seed": 295792508,
-    "skipNoAgentStep": false
-   }
-  },
-  "1": {
-   "finishedTime": 70.0890440940857,
-   "step_count": 970,
-   "numAlives": {
-    "Blue": 2.0,
-    "Red": 3.0
-   },
-   "endReason": "ELIMINATION",
-   "scores": {
-    "Blue": 0.0,
-    "Red": 1.0
-   },
-   "error": false,
-   "red_error_message": "",
-   "blue_error_message": "",
-   "config": {
-    "AgentConfigDispatcher": {
-     "BlueAgents": {
-      "elements": [
-       {
-        "model": "Agent_1",
-        "name": "Blue_1_1",
-        "policy": "Policy_1",
-        "port": "0",
-        "type": "External"
-       },
-       {
-        "model": "Agent_1",
-        "name": "Blue_1_2",
-        "policy": "Policy_1",
-        "port": "0",
-        "type": "External"
-       },
-       {
-        "model": "Agent_1",
-        "name": "Blue_1_3",
-        "policy": "Policy_1",
-        "port": "0",
-        "type": "External"
-       },
-       {
-        "model": "Agent_1",
-        "name": "Blue_1_4",
-        "policy": "Policy_1",
-        "port": "0",
-        "type": "External"
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     },
-     "RedAgents": {
-      "elements": [
-       {
-        "model": "Agent_0",
-        "name": "Red_0",
-        "policy": "Policy_0",
-        "port": "0",
-        "type": "External"
-       },
-       {
-        "model": "Agent_0",
-        "name": "Red_0",
-        "policy": "Policy_0",
-        "port": "1",
-        "type": "External"
-       },
-       {
-        "model": "Agent_0",
-        "name": "Red_0",
-        "policy": "Policy_0",
-        "port": "2",
-        "type": "External"
-       },
-       {
-        "model": "Agent_0",
-        "name": "Red_0",
-        "policy": "Policy_0",
-        "port": "3",
-        "type": "External"
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     }
-    },
-    "AssetConfigDispatcher": {
-     "BlueFighters": {
-      "elements": [
-       {
-        "model": "BlueFighter1",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "BlueFighter2",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "BlueFighter3",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "BlueFighter4",
-        "type": "PhysicalAsset"
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     },
-     "BlueInitialState": {
-      "elements": [
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 297.83309303251656,
-          "pos": [
-           13021.352309161943,
-           97068.90091102335,
-           -11145.015012301803
-          ],
-          "vel": 271.85300255083354
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 235.8731513620905,
-          "pos": [
-           9647.264053127845,
-           101123.66850449232,
-           -7239.7631893003445
-          ],
-          "vel": 276.0211386702504
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 252.92535582844837,
-          "pos": [
-           -13036.430792628245,
-           102493.41240178261,
-           -9301.151500437953
-          ],
-          "vel": 270.96835054247356
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 282.4530111449155,
-          "pos": [
-           -13550.638764361214,
-           100655.59991901822,
-           -11482.840247408454
-          ],
-          "vel": 261.3265578911593
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 135.57049551575295,
-          "pos": [
-           -63570.56146502979,
-           103500.15582859454,
-           -10000.0
-          ],
-          "vel": 300.0
-         }
-        }
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     },
-     "Escorted": {
-      "model": "R7ContestModels.R7ContestOpenEscorted",
-      "type": "PhysicalAsset"
-     },
-     "RedFighters": {
-      "elements": [
-       {
-        "model": "RedFighter1",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "RedFighter2",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "RedFighter3",
-        "type": "PhysicalAsset"
-       },
-       {
-        "model": "RedFighter4",
-        "type": "PhysicalAsset"
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     },
-     "RedInitialState": {
-      "elements": [
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 117.83309303251656,
-          "pos": [
-           -13021.352309161943,
-           -97068.90091102335,
-           -11145.015012301803
-          ],
-          "vel": 271.85300255083354
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 55.87315136209054,
-          "pos": [
-           -9647.264053127845,
-           -101123.66850449232,
-           -7239.7631893003445
-          ],
-          "vel": 276.0211386702504
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 72.92535582844835,
-          "pos": [
-           13036.430792628245,
-           -102493.41240178261,
-           -9301.151500437953
-          ],
-          "vel": 270.96835054247356
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 102.45301114491548,
-          "pos": [
-           13550.638764361214,
-           -100655.59991901822,
-           -11482.840247408454
-          ],
-          "vel": 261.3265578911593
-         }
-        }
-       },
-       {
-        "type": "direct",
-        "value": {
-         "instanceConfig": {
-          "heading": 180.0,
-          "pos": [
-           43590.8895332118,
-           -95000.0,
-           -10000.0
-          ],
-          "vel": 300.0
-         }
-        }
-       }
-      ],
-      "order": "fixed",
-      "type": "group"
-     }
-    },
-    "Assets": {
-     "Blue": {
-      "elements": [
-       {
-        "elements": [
-         {
-          "alias": "BlueFighters",
-          "index": 0,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "BlueFighters",
-          "index": 1,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "BlueFighters",
-          "index": 2,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "BlueFighters",
-          "index": 3,
-          "instance": "Same",
-          "type": "alias"
-         }
-        ],
-        "names": [
-         "BlueF1",
-         "BlueF2",
-         "BlueF3",
-         "BlueF4"
-        ],
-        "order": "fixed",
-        "overrider": [
-         {
-          "elements": [
-           {
-            "alias": "BlueInitialState",
-            "index": 0,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "BlueInitialState",
-            "index": 1,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "BlueInitialState",
-            "index": 2,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "BlueInitialState",
-            "index": 3,
-            "instance": "Same",
-            "type": "alias"
-           }
-          ],
-          "order": "fixed",
-          "type": "group"
-         },
-         {
-          "element": {
-           "type": "direct",
-           "value": {
-            "instanceConfig": {
-             "datalinkName": "BlueDatalink"
-            }
-           }
-          },
-          "number": 4,
-          "type": "broadcast"
-         },
-         {
-          "elements": [
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "BlueAgents",
-              "index": 0,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "BlueAgents",
-              "index": 1,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "BlueAgents",
-              "index": 2,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "BlueAgents",
-              "index": 3,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           }
-          ],
-          "order": "fixed",
-          "type": "group"
-         }
-        ],
-        "type": "group"
-       },
-       {
-        "elements": [
-         {
-          "alias": "Escorted",
-          "overrider": [
-           {
-            "alias": "BlueInitialState",
-            "index": 4,
-            "type": "alias"
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "model": "R7ContestModels.R7ContestBlueEscortedAgent",
-              "name": "BlueE_Agent",
-              "port": "0",
-              "type": "Internal"
-             },
-             "instanceConfig": {
-              "datalinkName": "BlueDatalink"
-             }
-            }
-           }
-          ],
-          "type": "alias"
-         }
-        ],
-        "names": [
-         "BlueE"
-        ],
-        "order": "fixed",
-        "type": "group"
-       }
-      ],
-      "type": "concatenate"
-     },
-     "Red": {
-      "elements": [
-       {
-        "elements": [
-         {
-          "alias": "RedFighters",
-          "index": 0,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "RedFighters",
-          "index": 1,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "RedFighters",
-          "index": 2,
-          "instance": "Same",
-          "type": "alias"
-         },
-         {
-          "alias": "RedFighters",
-          "index": 3,
-          "instance": "Same",
-          "type": "alias"
-         }
-        ],
-        "names": [
-         "RedF1",
-         "RedF2",
-         "RedF3",
-         "RedF4"
-        ],
-        "order": "fixed",
-        "overrider": [
-         {
-          "elements": [
-           {
-            "alias": "RedInitialState",
-            "index": 0,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "RedInitialState",
-            "index": 1,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "RedInitialState",
-            "index": 2,
-            "instance": "Same",
-            "type": "alias"
-           },
-           {
-            "alias": "RedInitialState",
-            "index": 3,
-            "instance": "Same",
-            "type": "alias"
-           }
-          ],
-          "order": "fixed",
-          "type": "group"
-         },
-         {
-          "element": {
-           "type": "direct",
-           "value": {
-            "instanceConfig": {
-             "datalinkName": "RedDatalink"
-            }
-           }
-          },
-          "number": 4,
-          "type": "broadcast"
-         },
-         {
-          "elements": [
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "RedAgents",
-              "index": 0,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "RedAgents",
-              "index": 1,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "RedAgents",
-              "index": 2,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "alias": "RedAgents",
-              "index": 3,
-              "instance": "g1",
-              "type": "alias"
-             }
-            }
-           }
-          ],
-          "order": "fixed",
-          "type": "group"
-         }
-        ],
-        "type": "group"
-       },
-       {
-        "elements": [
-         {
-          "alias": "Escorted",
-          "overrider": [
-           {
-            "alias": "RedInitialState",
-            "index": 4,
-            "type": "alias"
-           },
-           {
-            "type": "direct",
-            "value": {
-             "Agent": {
-              "model": "R7ContestModels.R7ContestRedEscortedAgent",
-              "name": "RedE_Agent",
-              "port": "0",
-              "type": "Internal"
-             },
-             "instanceConfig": {
-              "datalinkName": "RedDatalink"
-             }
-            }
-           }
-          ],
-          "type": "alias"
-         }
-        ],
-        "names": [
-         "RedE"
-        ],
-        "order": "fixed",
-        "type": "group"
-       }
-      ],
-      "type": "concatenate"
-     },
-     "type": "group"
-    },
-    "CommunicationBuffers": {
-     "BlueDatalink": {
-      "participants": [
-       "PhysicalAsset:Blue/Blue[FE][0-9]*"
-      ]
-     },
-     "RedDatalink": {
-      "participants": [
-       "PhysicalAsset:Red/Red[FE][0-9]*"
-      ]
-     }
-    },
-    "Loggers": {
-     "GUIStateLogger": {
-      "class": "GUIStateLogger",
-      "config": {
-       "episodeInterval": 1,
-       "innerInterval": 1,
-       "prefix": "./results/0/1_vs_0"
-      }
-     }
-    },
-    "Rewards": [],
-    "Ruler": "R7ContestModels.R7ContestRuler",
-    "TimeStep": {
-     "baseTimeStep": 1.0,
-     "defaultAgentStepInterval": 1
-    },
-    "ViewerType": "None",
-    "seed": 295792508,
-    "skipNoAgentStep": false
-   }
-  },
-  "2": {
-   "finishedTime": 47.68107748031616,
-   "step_count": 524,
+   "finishedTime": 25.023643016815186,
+   "step_count": 1200,
    "numAlives": {
     "Blue": 5.0,
     "Red": 2.0
    },
-   "endReason": "ELIMINATION",
+   "endReason": "TIMEUP",
    "scores": {
-    "Blue": 1.0,
+    "Blue": 0.0,
     "Red": 0.0
    },
    "error": false,
@@ -1380,30 +56,30 @@
       "elements": [
        {
         "model": "Agent_0",
-        "name": "Red_0",
+        "name": "Red_0_1",
         "policy": "Policy_0",
         "port": "0",
         "type": "External"
        },
        {
         "model": "Agent_0",
-        "name": "Red_0",
+        "name": "Red_0_2",
         "policy": "Policy_0",
-        "port": "1",
+        "port": "0",
         "type": "External"
        },
        {
         "model": "Agent_0",
-        "name": "Red_0",
+        "name": "Red_0_3",
         "policy": "Policy_0",
-        "port": "2",
+        "port": "0",
         "type": "External"
        },
        {
         "model": "Agent_0",
-        "name": "Red_0",
+        "name": "Red_0_4",
         "policy": "Policy_0",
-        "port": "3",
+        "port": "0",
         "type": "External"
        }
       ],
@@ -1440,13 +116,13 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 297.83309303251656,
+          "heading": 298.1372415699236,
           "pos": [
-           13021.352309161943,
-           97068.90091102335,
-           -11145.015012301803
+           -10176.827050452028,
+           100876.458743781,
+           -10673.607310263184
           ],
-          "vel": 271.85300255083354
+          "vel": 268.0105155708325
          }
         }
        },
@@ -1454,13 +130,13 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 235.8731513620905,
+          "heading": 306.40493347786054,
           "pos": [
-           9647.264053127845,
-           101123.66850449232,
-           -7239.7631893003445
+           9710.564268003967,
+           99236.53248283455,
+           -6572.841312380678
           ],
-          "vel": 276.0211386702504
+          "vel": 261.05030517339446
          }
         }
        },
@@ -1468,13 +144,13 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 252.92535582844837,
+          "heading": 234.1135242908328,
           "pos": [
-           -13036.430792628245,
-           102493.41240178261,
-           -9301.151500437953
+           -10218.219997256558,
+           103162.0808362488,
+           -10044.11728108416
           ],
-          "vel": 270.96835054247356
+          "vel": 264.56143356271474
          }
         }
        },
@@ -1482,13 +158,13 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 282.4530111449155,
+          "heading": 294.09999963874316,
           "pos": [
-           -13550.638764361214,
-           100655.59991901822,
-           -11482.840247408454
+           1080.077302588852,
+           96383.16421925792,
+           -7450.064986461349
           ],
-          "vel": 261.3265578911593
+          "vel": 262.0820899451799
          }
         }
        },
@@ -1496,10 +172,10 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 135.57049551575295,
+          "heading": 0.0,
           "pos": [
-           -63570.56146502979,
-           103500.15582859454,
+           52011.945777693705,
+           95000.0,
            -10000.0
           ],
           "vel": 300.0
@@ -1542,13 +218,13 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 117.83309303251656,
+          "heading": 118.13724156992362,
           "pos": [
-           -13021.352309161943,
-           -97068.90091102335,
-           -11145.015012301803
+           10176.827050452028,
+           -100876.458743781,
+           -10673.607310263184
           ],
-          "vel": 271.85300255083354
+          "vel": 268.0105155708325
          }
         }
        },
@@ -1556,13 +232,13 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 55.87315136209054,
+          "heading": 126.40493347786054,
           "pos": [
-           -9647.264053127845,
-           -101123.66850449232,
-           -7239.7631893003445
+           -9710.564268003967,
+           -99236.53248283455,
+           -6572.841312380678
           ],
-          "vel": 276.0211386702504
+          "vel": 261.05030517339446
          }
         }
        },
@@ -1570,13 +246,13 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 72.92535582844835,
+          "heading": 54.1135242908328,
           "pos": [
-           13036.430792628245,
-           -102493.41240178261,
-           -9301.151500437953
+           10218.219997256558,
+           -103162.0808362488,
+           -10044.11728108416
           ],
-          "vel": 270.96835054247356
+          "vel": 264.56143356271474
          }
         }
        },
@@ -1584,13 +260,13 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 102.45301114491548,
+          "heading": 114.09999963874316,
           "pos": [
-           13550.638764361214,
-           -100655.59991901822,
-           -11482.840247408454
+           -1080.077302588852,
+           -96383.16421925792,
+           -7450.064986461349
           ],
-          "vel": 261.3265578911593
+          "vel": 262.0820899451799
          }
         }
        },
@@ -1598,10 +274,10 @@
         "type": "direct",
         "value": {
          "instanceConfig": {
-          "heading": 180.0,
+          "heading": 0.0,
           "pos": [
-           43590.8895332118,
-           -95000.0,
+           32706.200073168788,
+           -105000.0,
            -10000.0
           ],
           "vel": 300.0
@@ -1966,16 +642,7 @@
       ]
      }
     },
-    "Loggers": {
-     "GUIStateLogger": {
-      "class": "GUIStateLogger",
-      "config": {
-       "episodeInterval": 1,
-       "innerInterval": 1,
-       "prefix": "./results/0/1_vs_0"
-      }
-     }
-    },
+    "Loggers": {},
     "Rewards": [],
     "Ruler": "R7ContestModels.R7ContestRuler",
     "TimeStep": {
@@ -1983,14 +650,14 @@
      "defaultAgentStepInterval": 1
     },
     "ViewerType": "None",
-    "seed": 295792508,
+    "seed": 1730410163,
     "skipNoAgentStep": false
    }
   }
  },
- "win": 1,
- "loss": 2,
- "draw": 0,
+ "win": 0,
+ "loss": 0,
+ "draw": 1,
  "status": "success",
  "message": "ok"
 }

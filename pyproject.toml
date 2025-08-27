@@ -12,4 +12,7 @@ dependencies = [
     "lightgbm==4.5.0",
     "timeout-decorator==0.5.0",
     "opencv-python-headless==4.11.0.86",
+    "pyyaml>=6.0.2",
+    "ray>=2.48.0",
+    "setuptools>=62.4",
 ]

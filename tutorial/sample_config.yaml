@@ -1,4 +1,3 @@
-
 save_dir: ./results/Open/Multi
 
 ray_args:
@@ -233,7 +232,7 @@ policy_config:
 train_args:
     Learner:
         node_designation: null #127.0.0.1を指定してはいけない。
-        num_gpus: 1 # MacOSの場合はrayがMPSをGPUとして認識しないので0にすること。ここで0にしてもPyTorchはMPSを認識するのでt.to('mps')のように利用可能。
+        num_gpus: 4 # MacOSの場合はrayがMPSをGPUとして認識しないので0にすること。ここで0にしてもPyTorchはMPSを認識するのでt.to('mps')のように利用可能。
         match_monitor_class: TwoTeamCombatMatchMonitor
         turn_based_training: false
         observation: false
@@ -258,7 +257,7 @@ train_args:
         update_episodes: 10
         batch_size: 128
         minimum_episodes: 10
-        epochs: -1
+        epochs: 5
         num_batchers: 1
         eval_rate: 0.1 #本家HandyRLでは勝手にupdate_episode^(-0.15)とのmaxを取っていたものを無効化している。
         worker:

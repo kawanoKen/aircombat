@@ -1,30 +1,31 @@
+services:
+  dev1:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 4
+              capabilities: [gpu]
+    container_name: atla4
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/workspace
+    shm_size: '32gb'
+    tty: true
+
 # services:
 #   dev1:
 #     build:
 #       context: .
-#       dockerfile: dockerfiles/Dockerfile.gpu
-#     deploy:
-#       resources:
-#         reservations:
-#           devices:
-#             - driver: nvidia
-#               count: 1
-#               capabilities: [gpu]
+#       dockerfile: dockerfiles/Dockerfile.cpu
 #     container_name: atla4
 #     ports:
 #       - "8080:8080"
 #     volumes:
 #       - .:/workspace
 #     tty: true
-
-services:
-  dev1:
-    build:
-      context: .
-      dockerfile: dockerfiles/Dockerfile.cpu
-    container_name: atla4
-    ports:
-      - "8080:8080"
-    volumes:
-      - .:/workspace
-    tty: true
